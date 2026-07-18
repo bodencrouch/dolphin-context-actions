@@ -23,9 +23,12 @@ Installs KDE File Converter for the current user:
   ~/.local/share/kio/servicemenus/dolphin-file-converter-*.desktop
 
 Dependencies (per conversion, checked at install time):
-  PDF      python3-PyMuPDF
-  DOCX     libreoffice or soffice
-  YAML/JSON PyYAML
+  PDF         PyMuPDF (python3-PyMuPDF)
+  Office→PDF  LibreOffice (libreoffice or soffice)
+  Markdown    pandoc
+  YAML/JSON   PyYAML
+  JSON→TOML   tomli-w
+  Images      ImageMagick (magick or convert)
 EOF
 }
 
@@ -73,6 +76,18 @@ fi
 
 if ! python3 -c "import yaml" 2>/dev/null; then
   warn "PyYAML not available — YAML/JSON conversions will be omitted from menus"
+fi
+
+if ! python3 -c "import tomli_w" 2>/dev/null; then
+  warn "tomli-w not available — JSON to TOML conversions will be omitted from menus"
+fi
+
+if ! command -v pandoc >/dev/null 2>&1; then
+  warn "pandoc not found — Markdown/HTML conversions will be omitted from menus"
+fi
+
+if ! command -v magick >/dev/null 2>&1 && ! command -v convert >/dev/null 2>&1; then
+  warn "ImageMagick not found — image conversions will be omitted from menus"
 fi
 
 log "Install complete. Restart Dolphin if the Convert menu does not appear."

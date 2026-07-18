@@ -6,32 +6,54 @@ This is a small utility for KDE Plasma that adds context-menu conversions using 
 
 ## What it does
 
-When you select a supported file, Dolphin shows a **Convert** submenu:
+When you select a supported file, Dolphin shows a **Convert** submenu. Each file type gets one featured action in the submenu; everything else is under **More…**.
 
-| File type | Featured action | Also available via **More…** |
-|-----------|-----------------|------------------------------|
+### Office → PDF (LibreOffice)
+
+DOCX, ODT, ODS, PPTX, XLSX, RTF, TXT → PDF
+
+### Text & markup (Pandoc)
+
+MD → HTML (featured), MD → PDF, HTML → MD
+
+### Data formats
+
+| Source | Featured | Via More… |
+|--------|----------|-----------|
 | PDF | To Markdown | — |
-| DOCX | To PDF | — |
 | YAML / YML | To JSON | — |
-| JSON | — | To YAML |
+| CSV | To JSON | — |
+| TOML | To JSON | — |
+| JSON | — | To YAML, To CSV, To TOML |
+| TSV | — | To CSV |
+
+JSON → CSV requires a top-level array of objects (`[{...}, {...}]`).
+
+### Images (ImageMagick)
+
+PNG → JPEG (featured), WebP → PNG (featured), plus JPG ↔ PNG, WebP → JPEG, PNG → WebP, HEIC → JPEG via **More…**
 
 Output files are written next to the source file with the new extension (`report.pdf` → `report.md`). Existing outputs are skipped unless you pass `--overwrite` on the command line.
-
-Featured conversions show up directly in the submenu. Everything else (and anything you add later) is reachable through **More…**, which opens a picker dialog.
 
 ## Requirements
 
 - KDE Plasma 6 (or recent Plasma 5 with the `~/.local/share/kio/servicemenus/` path)
-- Python 3.10+
+- Python 3.11+
 - `kdialog` and `notify-send` (part of a normal KDE install)
 
 Optional dependencies depend on which conversions you want:
 
 | Conversion | Needs |
 |------------|-------|
-| PDF → Markdown | [PyMuPDF](https://pypi.org/project/PyMuPDF/) (`python3-PyMuPDF` on Fedora, or `pip install pymupdf`) |
-| DOCX → PDF | LibreOffice (`libreoffice` or `soffice` on PATH, or the Flatpak) |
+| PDF → Markdown | [PyMuPDF](https://pypi.org/project/PyMuPDF/) |
+| Office → PDF | LibreOffice (`libreoffice` or `soffice`) |
+| Markdown / HTML | [Pandoc](https://pandoc.org/) |
 | YAML ↔ JSON | [PyYAML](https://pypi.org/project/PyYAML/) |
+| TOML ↔ JSON | stdlib `tomllib` (read) + [tomli-w](https://pypi.org/project/tomli-w/) (write) |
+| CSV / TSV | Python stdlib (no extra packages) |
+| Images | [ImageMagick](https://imagemagick.org/) (`magick` or `convert`) |
+
+Install Python deps: `pip install -r requirements.txt`
 
 Conversions whose dependencies are missing are simply omitted from the generated menus.
 

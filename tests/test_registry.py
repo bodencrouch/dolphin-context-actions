@@ -18,14 +18,40 @@ converter = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = converter
 spec.loader.exec_module(converter)
 
+EXPECTED_IDS = {
+    "pdf-to-md",
+    "docx-to-pdf",
+    "odt-to-pdf",
+    "ods-to-pdf",
+    "pptx-to-pdf",
+    "xlsx-to-pdf",
+    "rtf-to-pdf",
+    "txt-to-pdf",
+    "md-to-html",
+    "html-to-md",
+    "md-to-pdf",
+    "yaml-to-json",
+    "json-to-yaml",
+    "csv-to-json",
+    "json-to-csv",
+    "tsv-to-csv",
+    "toml-to-json",
+    "json-to-toml",
+    "png-to-jpg",
+    "jpg-to-png",
+    "webp-to-png",
+    "webp-to-jpg",
+    "png-to-webp",
+    "heic-to-jpg",
+}
+
 
 class RegistryTests(unittest.TestCase):
     def test_parse_bundled_registry(self) -> None:
         data = converter.load_yaml(ROOT / "config" / "conversions.yaml")
         conversions = converter.parse_registry(data)
         ids = {c.id for c in conversions}
-        self.assertIn("pdf-to-md", ids)
-        self.assertIn("yaml-to-json", ids)
+        self.assertEqual(ids, EXPECTED_IDS)
 
     def test_pdf_match(self) -> None:
         data = converter.load_yaml(ROOT / "config" / "conversions.yaml")
