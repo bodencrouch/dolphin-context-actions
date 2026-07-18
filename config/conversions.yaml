@@ -1,0 +1,53 @@
+# Conversion registry for KDE File Converter.
+#
+# Edit this file, then run ./install.sh to refresh Dolphin context menus.
+# See docs/adding-conversions.md for the full schema.
+
+conversions:
+  - id: pdf-to-md
+    label: To Markdown
+    source_extensions: [.pdf]
+    source_mimetypes: [application/pdf]
+    target_extension: .md
+    featured: true
+    requires_commands: []
+    requires_packages: [python3-PyMuPDF]
+    engine: pymupdf_text
+    icon: text-markdown
+
+  - id: docx-to-pdf
+    label: To PDF
+    source_extensions: [.docx]
+    source_mimetypes:
+      - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+    target_extension: .pdf
+    featured: true
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: yaml-to-json
+    label: To JSON
+    source_extensions: [.yaml, .yml]
+    source_mimetypes:
+      - application/x-yaml
+      - application/yaml
+      - text/yaml
+      - text/x-yaml
+    target_extension: .json
+    featured: true
+    requires_commands: []
+    requires_packages: [PyYAML]
+    engine: yaml_json
+    icon: application-json
+
+  - id: json-to-yaml
+    label: To YAML
+    source_extensions: [.json]
+    source_mimetypes: [application/json]
+    target_extension: .yaml
+    featured: false
+    requires_commands: []
+    requires_packages: [PyYAML]
+    engine: yaml_json
+    icon: text-x-generic
