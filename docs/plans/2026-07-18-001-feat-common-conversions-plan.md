@@ -1,6 +1,6 @@
 ---
 title: "feat: Expand common file conversion catalog"
-status: active
+status: completed
 date: 2026-07-18
 type: feat
 origin: user request — quick, simple, common conversions for kde-file-converter
