@@ -42,7 +42,7 @@ conversions:
 
 **`requires_commands`** — If non-empty, at least one command must be found on `$PATH`. For LibreOffice, list both `libreoffice` and `soffice` since distros differ.
 
-**`requires_packages`** — Python import names checked at menu generation time. Supported aliases: `python3-PyMuPDF`, `pymupdf`, `PyYAML`.
+**`requires_packages`** — Python import names checked at menu generation time. Supported aliases: `python3-PyMuPDF`, `pymupdf`, `PyYAML`, `tomli-w`.
 
 **`engine`** — See below. This is the only field that ties a registry entry to code.
 
@@ -50,35 +50,28 @@ conversions:
 
 | Engine | What it does | Typical use |
 |--------|--------------|-------------|
-| `pymupdf_text` | Extracts plain text from PDF pages via PyMuPDF | PDF → text/markdown |
-| `libreoffice_headless` | Runs `libreoffice --headless --convert-to …` | Office docs → PDF, etc. |
+| `pymupdf_text` | Extracts plain text from PDF pages via PyMuPDF | PDF → Markdown |
+| `libreoffice_headless` | Runs `libreoffice --headless --convert-to …` | Office docs → PDF |
 | `yaml_json` | Parses YAML or JSON and writes the other format | YAML ↔ JSON |
+| `pandoc` | Runs `pandoc source -o target` | Markdown ↔ HTML, MD → PDF |
+| `csv_json` | CSV/TSV ↔ JSON via stdlib `csv` | CSV → JSON, JSON → CSV, TSV → CSV |
+| `toml_json` | TOML ↔ JSON via `tomllib` and `tomli_w` | TOML ↔ JSON |
+| `imagemagick` | Runs `magick` or `convert` for raster swaps | PNG/JPEG/WebP/HEIC |
+
+### Engine notes
+
+**`csv_json`** — JSON → CSV only accepts a top-level JSON array where every item is an object with the same keys. Other shapes raise a clear error.
+
+**`imagemagick`** — HEIC support depends on your ImageMagick build (libheif delegate). If conversion fails, the error dialog shows ImageMagick's message.
 
 Adding a new engine means editing `scripts/dolphin-file-converter.py` — add a function and register it in the `ENGINES` dict. Keep engines small and focused.
 
 ## Worked example: Markdown to PDF
 
-Suppose you want `featured: false` conversion from Markdown to PDF using pandoc.
+`md-to-pdf` is already in the bundled registry. To add a similar conversion yourself:
 
 1. Install pandoc and make sure `pandoc` is on your PATH.
-
-2. Add a new engine to `dolphin-file-converter.py`:
-
-```python
-def convert_pandoc(source: Path, target: Path) -> None:
-    fmt = target.suffix.lstrip(".")
-    result = subprocess.run(
-        ["pandoc", str(source), "-o", str(target)],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr.strip()[:500])
-
-ENGINES["pandoc"] = convert_pandoc
-```
-
-3. Add a registry entry:
+2. Add a registry entry (the `pandoc` engine already exists):
 
 ```yaml
   - id: md-to-pdf
@@ -88,12 +81,11 @@ ENGINES["pandoc"] = convert_pandoc
     target_extension: .pdf
     featured: false
     requires_commands: [pandoc]
-    requires_packages: []
     engine: pandoc
     icon: application-pdf
 ```
 
-4. Re-install:
+3. Re-install:
 
 ```bash
 ./install.sh --apply
