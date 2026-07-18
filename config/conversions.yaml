@@ -26,6 +26,98 @@ conversions:
     engine: libreoffice_headless
     icon: application-pdf
 
+  - id: odt-to-pdf
+    label: To PDF
+    source_extensions: [.odt]
+    source_mimetypes: [application/vnd.oasis.opendocument.text]
+    target_extension: .pdf
+    featured: true
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: ods-to-pdf
+    label: To PDF
+    source_extensions: [.ods]
+    source_mimetypes: [application/vnd.oasis.opendocument.spreadsheet]
+    target_extension: .pdf
+    featured: false
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: pptx-to-pdf
+    label: To PDF
+    source_extensions: [.pptx]
+    source_mimetypes:
+      - application/vnd.openxmlformats-officedocument.presentationml.presentation
+    target_extension: .pdf
+    featured: true
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: xlsx-to-pdf
+    label: To PDF
+    source_extensions: [.xlsx]
+    source_mimetypes:
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+    target_extension: .pdf
+    featured: true
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: rtf-to-pdf
+    label: To PDF
+    source_extensions: [.rtf]
+    source_mimetypes: [text/rtf, application/rtf]
+    target_extension: .pdf
+    featured: false
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: txt-to-pdf
+    label: To PDF
+    source_extensions: [.txt]
+    source_mimetypes: [text/plain]
+    target_extension: .pdf
+    featured: false
+    requires_commands: [libreoffice, soffice]
+    engine: libreoffice_headless
+    icon: application-pdf
+
+  - id: md-to-html
+    label: To HTML
+    source_extensions: [.md]
+    source_mimetypes: [text/markdown, text/x-markdown]
+    target_extension: .html
+    featured: true
+    requires_commands: [pandoc]
+    engine: pandoc
+    icon: text-html
+
+  - id: html-to-md
+    label: To Markdown
+    source_extensions: [.html, .htm]
+    source_mimetypes: [text/html]
+    target_extension: .md
+    featured: false
+    requires_commands: [pandoc]
+    engine: pandoc
+    icon: text-markdown
+
+  - id: md-to-pdf
+    label: To PDF
+    source_extensions: [.md]
+    source_mimetypes: [text/markdown, text/x-markdown]
+    target_extension: .pdf
+    featured: false
+    requires_commands: [pandoc]
+    engine: pandoc
+    icon: application-pdf
+
   - id: yaml-to-json
     label: To JSON
     source_extensions: [.yaml, .yml]
@@ -51,3 +143,111 @@ conversions:
     requires_packages: [PyYAML]
     engine: yaml_json
     icon: text-x-generic
+
+  - id: csv-to-json
+    label: To JSON
+    source_extensions: [.csv]
+    source_mimetypes: [text/csv, application/csv]
+    target_extension: .json
+    featured: true
+    requires_commands: []
+    engine: csv_json
+    icon: application-json
+
+  - id: json-to-csv
+    label: To CSV
+    source_extensions: [.json]
+    source_mimetypes: [application/json]
+    target_extension: .csv
+    featured: false
+    engine: csv_json
+    icon: text-csv
+
+  - id: tsv-to-csv
+    label: To CSV
+    source_extensions: [.tsv]
+    source_mimetypes: [text/tab-separated-values]
+    target_extension: .csv
+    featured: false
+    engine: csv_json
+    icon: text-csv
+
+  - id: toml-to-json
+    label: To JSON
+    source_extensions: [.toml]
+    source_mimetypes: [application/toml]
+    target_extension: .json
+    featured: true
+    requires_commands: []
+    engine: toml_json
+    icon: application-json
+
+  - id: json-to-toml
+    label: To TOML
+    source_extensions: [.json]
+    source_mimetypes: [application/json]
+    target_extension: .toml
+    featured: false
+    requires_packages: [tomli-w]
+    engine: toml_json
+    icon: text-x-generic
+
+  - id: png-to-jpg
+    label: To JPEG
+    source_extensions: [.png]
+    source_mimetypes: [image/png]
+    target_extension: .jpg
+    featured: true
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-jpeg
+
+  - id: jpg-to-png
+    label: To PNG
+    source_extensions: [.jpg, .jpeg]
+    source_mimetypes: [image/jpeg]
+    target_extension: .png
+    featured: false
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-png
+
+  - id: webp-to-png
+    label: To PNG
+    source_extensions: [.webp]
+    source_mimetypes: [image/webp]
+    target_extension: .png
+    featured: true
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-png
+
+  - id: webp-to-jpg
+    label: To JPEG
+    source_extensions: [.webp]
+    source_mimetypes: [image/webp]
+    target_extension: .jpg
+    featured: false
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-jpeg
+
+  - id: png-to-webp
+    label: To WebP
+    source_extensions: [.png]
+    source_mimetypes: [image/png]
+    target_extension: .webp
+    featured: false
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-webp
+
+  - id: heic-to-jpg
+    label: To JPEG
+    source_extensions: [.heic]
+    source_mimetypes: [image/heic, image/heif]
+    target_extension: .jpg
+    featured: false
+    requires_commands: [magick, convert]
+    engine: imagemagick
+    icon: image-jpeg

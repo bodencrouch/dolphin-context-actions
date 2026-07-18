@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import re
 import shutil
 import subprocess
 import sys
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -95,6 +97,12 @@ def package_available(name: str) -> bool:
     if name == "PyYAML":
         try:
             import yaml  # noqa: F401
+            return True
+        except ImportError:
+            return False
+    if name in {"tomli-w", "tomli_w"}:
+        try:
+            import tomli_w  # noqa: F401
             return True
         except ImportError:
             return False
@@ -234,10 +242,113 @@ def convert_yaml_json(source: Path, target: Path) -> None:
         )
 
 
+def convert_pandoc(source: Path, target: Path) -> None:
+    if not command_available("pandoc"):
+        raise RuntimeError("pandoc is not installed")
+    result = subprocess.run(
+        ["pandoc", str(source), "-o", str(target)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = (result.stderr or result.stdout or "pandoc conversion failed").strip()
+        raise RuntimeError(stderr[:500])
+
+
+def convert_csv_json(source: Path, target: Path) -> None:
+    source_ext = source.suffix.lower()
+    target_ext = target.suffix.lower()
+
+    if source_ext == ".csv" and target_ext == ".json":
+        with source.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        target.write_text(
+            json.dumps(rows, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return
+
+    if source_ext == ".tsv" and target_ext == ".csv":
+        with source.open(newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle, delimiter="\t"))
+        with target.open("w", newline="", encoding="utf-8") as handle:
+            if rows:
+                writer = csv.DictWriter(handle, fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+            else:
+                handle.write("")
+        return
+
+    if source_ext == ".json" and target_ext == ".csv":
+        data = json.loads(source.read_text(encoding="utf-8"))
+        if not isinstance(data, list) or not all(isinstance(row, dict) for row in data):
+            raise RuntimeError("JSON must be an array of objects to convert to CSV")
+        with target.open("w", newline="", encoding="utf-8") as handle:
+            if not data:
+                handle.write("")
+                return
+            writer = csv.DictWriter(handle, fieldnames=data[0].keys())
+            writer.writeheader()
+            writer.writerows(data)
+        return
+
+    raise RuntimeError(f"Unsupported csv_json conversion: {source_ext} -> {target_ext}")
+
+
+def convert_toml_json(source: Path, target: Path) -> None:
+    source_ext = source.suffix.lower()
+    target_ext = target.suffix.lower()
+
+    if source_ext == ".toml" and target_ext == ".json":
+        data = tomllib.loads(source.read_text(encoding="utf-8"))
+        target.write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        return
+
+    if source_ext == ".json" and target_ext == ".toml":
+        import tomli_w
+
+        data = json.loads(source.read_text(encoding="utf-8"))
+        target.write_text(tomli_w.dumps(data), encoding="utf-8")
+        return
+
+    raise RuntimeError(f"Unsupported toml_json conversion: {source_ext} -> {target_ext}")
+
+
+def find_imagemagick() -> list[str] | None:
+    if command_available("magick"):
+        return ["magick"]
+    if command_available("convert"):
+        return ["convert"]
+    return None
+
+
+def convert_imagemagick(source: Path, target: Path) -> None:
+    cmd_prefix = find_imagemagick()
+    if not cmd_prefix:
+        raise RuntimeError("ImageMagick is not installed (magick or convert)")
+
+    result = subprocess.run(
+        [*cmd_prefix, str(source), str(target)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        stderr = (result.stderr or result.stdout or "ImageMagick conversion failed").strip()
+        raise RuntimeError(stderr[:500])
+
+
 ENGINES = {
     "pymupdf_text": convert_pymupdf_text,
     "libreoffice_headless": convert_libreoffice_headless,
     "yaml_json": convert_yaml_json,
+    "pandoc": convert_pandoc,
+    "csv_json": convert_csv_json,
+    "toml_json": convert_toml_json,
+    "imagemagick": convert_imagemagick,
 }
 
 
