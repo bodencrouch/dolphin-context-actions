@@ -38,7 +38,7 @@ Conversions whose dependencies are missing are simply omitted from the generated
 ## Install
 
 ```bash
-git clone https://github.com/th3w1zard1/kde-file-converter.git
+git clone https://github.com/oldrepublicwizard/kde-file-converter.git
 cd kde-file-converter
 ./install.sh --apply
 ```
