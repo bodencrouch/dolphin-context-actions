@@ -1,0 +1,41 @@
+version: 1
+AppDir:
+  app_info:
+    id: io.github.brunner56.dolphin-convert-actions
+    name: dolphin-convert-actions
+    version: "1.0.0"
+    exec: usr/bin/dolphin-convert-actions
+    icon: document-convert
+
+  apt:
+    arch: amd64
+    sources:
+      - sourceline: "deb http://archive.ubuntu.com/ubuntu noble main universe"
+    include:
+      - python3
+      - python3-pip
+      - ffmpeg
+      - kdialog
+      - libnotify-bin
+
+  files:
+    include: []
+    exclude:
+      - usr/share/man
+      - usr/share/doc
+      - usr/share/locale
+
+  runtime:
+    env:
+      PATH: '${APPDIR}/usr/bin:${PATH}'
+      PIP_REQUIRE_VIRTUALENV: 'false'
+
+  test:
+    ubuntu:
+      image: appimagecrafters/appimage-builder:latest
+      command: /AppDir/usr/bin/dolphin-convert-actions --help
+
+AppImage:
+  update-information: None
+  sign-key: None
+  arch: x86_64

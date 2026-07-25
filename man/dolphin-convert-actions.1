@@ -1,0 +1,102 @@
+.TH DOLPHIN-CONVERT-ACTIONS 1 "July 2026" "dolphin-convert-actions 1.0.0" "User Commands"
+.SH NAME
+dolphin-convert-actions \- Smart context-menu media converter for Dolphin file manager
+.SH SYNOPSIS
+.B dolphin-convert-actions
+[\fI\,--smart-menu\/\fR] [\fI\,--batch MODE\/\fR] [\fI\,--format FMT\/\fR]
+[\fI\,--configure\/\fR] [\fI\,files...\/\fR]
+.SH DESCRIPTION
+\fBdolphin-convert-actions\fR is the backend for Dolphin (KDE file manager)
+service menus that add intelligent, context-aware media conversion actions
+to the right-click menu.
+.PP
+It detects the MIME type of the selected file and presents only relevant
+conversion options via kdialog dialogs, then runs the chosen conversion
+using ffmpeg with real-time progress tracking.
+.SH OPTIONS
+.TP
+\fB\-\-smart-menu\fR
+Show the interactive smart menu. Detects file type and presents relevant
+conversion actions. This is the mode called by the service menu.
+.TP
+\fB\-\-batch\fR \fI\,MODE\/\fR
+Run a batch conversion without interactive menus. Supported modes:
+.RS
+.TP
+\fBaudio\fR
+Convert audio files (use \fB\-\-format\fR to specify target).
+.TP
+\fBvideo\-to\-gif\fR
+Convert video files to animated GIF.
+.TP
+\fBvideo\-to\-mp4\fR
+Transcode video to MP4 (H.264+AAC).
+.TP
+\fBvideo\-to\-webm\fR
+Transcode video to WebM (VP9+Opus).
+.TP
+\fBextract\-audio\fR
+Extract audio track from video to MP3.
+.TP
+\fBimgur\-upload\fR
+Upload images/GIFs/videos to Imgur.
+.RE
+.TP
+\fB\-\-format\fR \fI\,FMT\/\fR
+Target format for \fB\-\-batch audio\fR. One of: mp3, ogg, flac, wav, m4a,
+opus, alac.
+.TP
+\fB\-\-configure\fR
+Open the configuration dialog to set defaults (audio format, GIF preset,
+Imgur Client ID).
+.TP
+\fBfiles\fR
+One or more file paths to process. Supports %F and %f from Dolphin service
+menu substitution.
+.SH EXIT STATUS
+.IP 0
+All conversions completed successfully.
+.IP 1
+One or more errors occurred or the operation was cancelled.
+.SH FILES
+.TP
+\fI~/.config/dolphin-convert-actions/config.json\fR
+User configuration file. Stores default audio format, GIF preset, and
+Imgur Client ID.
+.TP
+\fI~/.local/share/kio/servicemenus/dolphin-convert-actions.desktop\fR
+Service menu definition for the smart menu.
+.TP
+\fI~/.local/share/kio/servicemenus/dolphin-audio-converter.desktop\fR
+Service menu definition for the dedicated audio submenu.
+.SH EXAMPLES
+.TP
+Show the smart menu for a GIF file:
+dolphin-convert-actions \-\-smart\-menu funny.gif
+.TP
+Batch convert audio files to FLAC:
+dolphin-convert-actions \-\-batch audio \-\-format flac *.wav
+.TP
+Convert a video to GIF with medium preset:
+dolphin-convert-actions \-\-batch video\-to\-gif \-\-format medium clip.mp4
+.TP
+Upload images to Imgur:
+dolphin-convert-actions \-\-batch imgur\-upload screenshot.png
+.TP
+Open configuration:
+dolphin-convert-actions \-\-configure
+.SH DEPENDENCIES
+.TP
+Python 3.10+
+.TP
+ffmpeg (>= 4.4) with ffprobe
+.TP
+kdialog (KDE)
+.TP
+libnotify
+.SH AUTHORS
+Brunner56 <brunner56@users.noreply.github.com>
+.SH REPORTING BUGS
+https://github.com/brunner56/dolphin-convert-actions/issues
+.SH COPYRIGHT
+Copyright \(co 2025 Brunner56. License MIT.

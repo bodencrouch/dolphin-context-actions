@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dolphin-convert-actions"
+version = "1.0.0"
+description = "Smart Dolphin service menus for media conversion, GIF creation, audio transcoding, and Imgur upload"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["dolphin", "kde", "service-menu", "ffmpeg", "converter", "gif", "audio", "imgur"]
+
+authors = [
+  {name = "Brunner56"},
+]
+
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: KDE",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+  "Topic :: Multimedia :: Sound/Audio :: Conversion",
+  "Topic :: Multimedia :: Video :: Conversion",
+  "Topic :: Desktop Environment :: KDE",
+]
+
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/brunner56/dolphin-convert-actions"
+Repository = "https://github.com/brunner56/dolphin-convert-actions"
+Issues = "https://github.com/brunner56/dolphin-convert-actions/issues"
+
+[project.scripts]
+dolphin-convert-actions = "dolphin_convert_actions.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dolphin_convert_actions = ["py.typed"]

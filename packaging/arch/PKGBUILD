@@ -1,0 +1,29 @@
+# Maintainer: Brunner56 <brunner56@users.noreply.github.com>
+pkgname=dolphin-convert-actions
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Smart context-menu media converter for Dolphin file manager"
+arch=('any')
+url="https://github.com/brunner56/dolphin-convert-actions"
+license=('MIT')
+depends=('python>=3.10' 'ffmpeg>=4.4' 'kdialog' 'libnotify')
+makedepends=('python-setuptools' 'python-build' 'python-installer')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+validpgpkeys=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python -m build --wheel --no-isolation
+}
+
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+
+  # Install Dolphin service menus
+  install -Dm644 servicemenus/dolphin-convert-actions.desktop \
+    "$pkgdir/usr/share/kio/servicemenus/dolphin-convert-actions.desktop"
+  install -Dm644 servicemenus/dolphin-audio-converter.desktop \
+    "$pkgdir/usr/share/kio/servicemenus/dolphin-audio-converter.desktop"
+}
