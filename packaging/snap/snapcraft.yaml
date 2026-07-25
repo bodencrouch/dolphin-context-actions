@@ -1,0 +1,45 @@
+name: dolphin-convert-actions
+base: core24
+version: "1.0.0"
+summary: Smart context-menu media converter for Dolphin file manager
+description: |
+  Adds intelligent right-click actions to Dolphin (KDE file manager) for
+  converting media files. The menu adapts to file type — right-click a GIF
+  to convert it to MP4 or upload to Imgur; right-click a video to convert
+  to GIF with quality presets; right-click an audio file to transcode to
+  any of 7 formats (MP3, OGG, FLAC, WAV, M4A, Opus, ALAC).
+
+grade: stable
+confinement: strict
+
+parts:
+  dolphin-convert-actions:
+    plugin: python
+    source: https://github.com/brunner56/dolphin-convert-actions.git
+    source-tag: v1.0.0
+    python-packages: []
+    build-packages:
+      - ffmpeg
+    stage-packages:
+      - ffmpeg
+      - kdialog
+      - libnotify-bin
+
+apps:
+  dolphin-convert-actions:
+    command: bin/dolphin-convert-actions
+    plugs:
+      - home
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - removable-media
+      - network
+
+slots:
+  dolphin-servicemenu:
+    interface: content
+    target: $SNAP_USER_DATA/.local/share/kio/servicemenus
+    read:
+      - $SNAP/usr/share/kio/servicemenus
