@@ -1,3 +1,32 @@
+Metadata-Version: 2.4
+Name: dolphin-convert-actions
+Version: 1.0.0
+Summary: Smart Dolphin service menus for media conversion, GIF creation, audio transcoding, and Imgur upload
+Author: Brunner56
+License: MIT
+Project-URL: Homepage, https://github.com/brunner56/dolphin-convert-actions
+Project-URL: Repository, https://github.com/brunner56/dolphin-convert-actions
+Project-URL: Issues, https://github.com/brunner56/dolphin-convert-actions/issues
+Keywords: dolphin,kde,service-menu,ffmpeg,converter,gif,audio,imgur
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: KDE
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Topic :: Multimedia :: Graphics :: Graphics Conversion
+Classifier: Topic :: Multimedia :: Sound/Audio :: Conversion
+Classifier: Topic :: Multimedia :: Video :: Conversion
+Classifier: Topic :: Desktop Environment :: KDE
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Dynamic: license-file
+
 # Dolphin Convert Actions
 
 Smart context-menu media converter for the Dolphin file manager (KDE).
