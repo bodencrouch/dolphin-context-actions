@@ -1,2 +1,0 @@
-PyYAML>=6.0
-tomli-w>=1.0

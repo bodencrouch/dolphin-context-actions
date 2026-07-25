@@ -1,0 +1,13 @@
+dolphin-convert-actions (1.0.0-1) unstable; urgency=medium
+
+  * Initial release.
+  * Smart two-directional context menus for Dolphin (KDE file manager).
+  * GIF creation from video with 4 quality presets (ffmpeg palettegen).
+  * Video transcoding between MP4, WebM, and MKV.
+  * Audio conversion to 7 formats: MP3, OGG, FLAC, WAV, M4A, Opus, ALAC.
+  * Audio extraction from video files.
+  * Imgur upload with clipboard copy.
+  * kdialog progress bars and desktop notifications.
+  * Configurable defaults for audio format and GIF preset.
+
+ -- Brunner56 <brunner56@users.noreply.github.com>  Sat, 25 Jul 2026 08:00:00 +0000

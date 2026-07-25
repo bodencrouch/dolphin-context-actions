@@ -1,0 +1,41 @@
+id: io.github.brunner56.dolphin-convert-actions
+runtime: org.kde.Platform
+runtime-version: "6.8"
+sdk: org.kde.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.python3
+command: dolphin-convert-actions
+
+finish-args:
+  - --share=ipc
+  - --socket=fallback-x11
+  - --socket=wayland
+  - --filesystem=home:rw
+  - --share=network
+  - --talk-name=org.kde.kdialog
+  - --talk-name=org.freedesktop.Notifications
+
+modules:
+  - name: ffmpeg
+    buildsystem: simple
+    build-commands:
+      - apt-get update && apt-get install -y ffmpeg
+    sources:
+      - type: archive
+        url: https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz
+        sha256: ""
+        only-arches:
+          - x86_64
+
+  - name: dolphin-convert-actions
+    buildsystem: simple
+    build-commands:
+      - pip3 install --prefix=/app .
+      - install -Dm644 servicemenus/dolphin-convert-actions.desktop
+        /app/share/kio/servicemenus/dolphin-convert-actions.desktop
+      - install -Dm644 servicemenus/dolphin-audio-converter.desktop
+        /app/share/kio/servicemenus/dolphin-audio-converter.desktop
+    sources:
+      - type: git
+        url: https://github.com/brunner56/dolphin-convert-actions.git
+        tag: v1.0.0
