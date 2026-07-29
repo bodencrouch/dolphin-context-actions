@@ -42,10 +42,12 @@ install_service_menus() {
             else
                 echo "  Updating ${basename}..."
                 cp "$f" "$dest"
+                chmod +x "$dest"
             fi
         else
             echo "  Installing ${basename}..."
             cp "$f" "$dest"
+            chmod +x "$dest"
         fi
     done
 }
