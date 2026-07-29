@@ -197,7 +197,8 @@ def run_configure():
 
 # Link Shell Extension operations
 def handle_pick_link_source(files: list[str]):
-    """Handle picking files/folders as link source."""
+    if not files:
+        return
     link_ops.pick_link_source(files)
 
     if not link_ops.has_picked_sources():
