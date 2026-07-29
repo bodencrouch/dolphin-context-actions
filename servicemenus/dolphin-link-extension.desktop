@@ -2,71 +2,14 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=all/all;
-Actions=pickLinkSource;cancelLink;separator1;dropAs;dropHardlink;dropSymlink;separator2;hardlinkClone;symlinkClone;smartCopy;separator3;linkProperties;enumerateHardlinks;separator4;configure;
-X-KDE-Submenu=Link Shell Extension
+Actions=pickLinkSource;configure
+X-KDE-Priority=TopLevel
 Icon=edit-link
 
 [Desktop Action pickLinkSource]
 Name=Pick Link Source
 Icon=edit-link
 Exec=dolphin-convert-actions --pick-link-source %F
-
-[Desktop Action cancelLink]
-Name=Cancel Link Creation
-Icon=edit-delete
-Exec=dolphin-convert-actions --cancel-link
-
-[Desktop Action separator1]
-Name=
-
-[Desktop Action dropAs]
-Name=Drop As...
-Icon=edit-link
-Exec=dolphin-convert-actions --link-menu %F
-
-[Desktop Action dropHardlink]
-Name=Drop Hardlink
-Icon=edit-link
-Exec=dolphin-convert-actions --drop-hardlink --target-dir %d
-
-[Desktop Action dropSymlink]
-Name=Drop Symlink
-Icon=edit-link
-Exec=dolphin-convert-actions --drop-symlink --target-dir %d
-
-[Desktop Action separator2]
-Name=
-
-[Desktop Action hardlinkClone]
-Name=Hardlink Clone...
-Icon=folder
-Exec=dolphin-convert-actions --hardlink-clone %F
-
-[Desktop Action symlinkClone]
-Name=Symlink Clone...
-Icon=folder
-Exec=dolphin-convert-actions --symlink-clone %F
-
-[Desktop Action smartCopy]
-Name=Smart Copy...
-Icon=folder
-Exec=dolphin-convert-actions --smart-copy %F
-
-[Desktop Action separator3]
-Name=
-
-[Desktop Action linkProperties]
-Name=Link Properties
-Icon=dialog-information
-Exec=dolphin-convert-actions --link-properties %F
-
-[Desktop Action enumerateHardlinks]
-Name=Enumerate Hardlinks
-Icon=view-list
-Exec=dolphin-convert-actions --enumerate-hardlinks %F
-
-[Desktop Action separator4]
-Name=
 
 [Desktop Action configure]
 Name=Configure...
