@@ -47,3 +47,4 @@ Name=
 Name=Configure…
 Icon=configure
 Exec=dolphin-convert-actions --configure
+
