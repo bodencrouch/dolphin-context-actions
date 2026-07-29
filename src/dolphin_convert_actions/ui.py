@@ -1,6 +1,7 @@
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 QDBUS = next(
@@ -10,12 +11,15 @@ QDBUS = next(
 
 
 def kdialog(*args) -> subprocess.CompletedProcess:
-    return subprocess.run(
+    r = subprocess.run(
         ["kdialog"] + list(args),
         capture_output=True,
         text=True,
         env=os.environ.copy(),
     )
+    if r.returncode != 0 and not shutil.which("kdialog"):
+        print(f"kdialog not found. Args: {args}", file=sys.stderr)
+    return r
 
 
 def notify(title: str, msg: str, icon: str = "document-convert"):
