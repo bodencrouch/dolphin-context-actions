@@ -41,9 +41,9 @@ install_service_menus() {
                 echo "  ${basename} already up to date."
             else
                 echo "  Updating ${basename}..."
-                cp "$f" "$dest"
-                chmod +x "$dest"
             fi
+            cp "$f" "$dest"
+            chmod +x "$dest"
         else
             echo "  Installing ${basename}..."
             cp "$f" "$dest"
