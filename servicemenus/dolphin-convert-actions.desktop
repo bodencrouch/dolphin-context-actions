@@ -2,16 +2,44 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=image/gif;video/*;audio/*;image/png;image/jpeg;
-Actions=smartMenu;separator;configure;
+Actions=toGif;toMp4;toWebm;extractAudio;uploadImgur;separator;smartMenu;separator2;configure;
 X-KDE-Submenu=Convert Actions
 Icon=document-convert
+
+[Desktop Action toGif]
+Name=Convert to GIF (Medium)
+Icon=image-gif
+Exec=dolphin-convert-actions --batch video-to-gif --format medium %F
+
+[Desktop Action toMp4]
+Name=Convert to MP4
+Icon=video-mp4
+Exec=dolphin-convert-actions --batch video-to-mp4 %F
+
+[Desktop Action toWebm]
+Name=Convert to WebM
+Icon=video-webm
+Exec=dolphin-convert-actions --batch video-to-webm %F
+
+[Desktop Action extractAudio]
+Name=Extract Audio (MP3)
+Icon=audio-x-mp3
+Exec=dolphin-convert-actions --batch extract-audio %F
+
+[Desktop Action uploadImgur]
+Name=Upload to Imgur
+Icon=internet-web-browser
+Exec=dolphin-convert-actions --batch imgur-upload %F
+
+[Desktop Action separator]
+Name=
 
 [Desktop Action smartMenu]
 Name=Show Actions…
 Icon=document-convert
 Exec=dolphin-convert-actions --smart-menu %F
 
-[Desktop Action separator]
+[Desktop Action separator2]
 Name=
 
 [Desktop Action configure]
