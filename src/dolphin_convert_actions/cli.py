@@ -201,11 +201,6 @@ def handle_pick_link_source(files: list[str]):
         return
     link_ops.pick_link_source(files)
 
-    if not link_ops.has_picked_sources():
-        return
-
-    show_link_menu(files)
-
 
 def handle_cancel_link_creation():
     """Handle cancelling link creation."""
@@ -298,91 +293,6 @@ def handle_enumerate_hardlinks(files: list[str]):
         ui.info_dialog("Hardlink Siblings", "No other hardlinks found for this file.")
 
 
-def show_drop_as_menu():
-    """Show the Drop As menu dynamically based on picked sources."""
-    if not link_ops.has_picked_sources():
-        ui.error_dialog("Drop As", "No link source picked. Pick a source first.")
-        return
-    
-    items = link_ops.get_drop_as_menu_items()
-    choice = ui.menu_dialog(
-        "Drop As",
-        "Select drop operation:",
-        items
-    )
-    
-    if choice and choice != "separator1":
-        # For now, we need to get the target directory
-        # In a real service menu, this would come from the context
-        target = ui.input_dialog(
-            "Drop As",
-            "Enter target directory:",
-            str(Path.home())
-        )
-        if target:
-            link_ops.drop_as(target, choice)
-
-
-def show_link_menu(files: list[str]):
-    """Show the Link Shell Extension menu."""
-    if not files:
-        ui.error_dialog("Link Shell Extension", "No files selected.")
-        return
-    
-    # Check if we have picked sources
-    has_sources = link_ops.has_picked_sources()
-    
-    menu_items = [
-        ("pick_source", "Pick Link Source"),
-    ]
-    
-    if has_sources:
-        menu_items.append(("cancel_pick", "Cancel Link Creation"))
-        menu_items.append(("separator1", ""))
-        menu_items.append(("drop_as", "Drop As..."))
-        menu_items.append(("drop_hardlink", "Drop Hardlink"))
-        menu_items.append(("drop_symlink", "Drop Symlink"))
-    
-    menu_items.append(("separator2", ""))
-    menu_items.append(("smart_copy", "Smart Copy..."))
-    menu_items.append(("hardlink_clone", "Hardlink Clone..."))
-    menu_items.append(("symlink_clone", "Symlink Clone..."))
-    menu_items.append(("separator3", ""))
-    menu_items.append(("link_properties", "Link Properties"))
-    menu_items.append(("enumerate_hardlinks", "Enumerate Hardlinks"))
-    
-    choice = ui.menu_dialog(
-        "Link Shell Extension",
-        "Select operation:",
-        menu_items
-    )
-    
-    if choice == "pick_source":
-        link_ops.pick_link_source(files)
-    elif choice == "cancel_pick":
-        link_ops.cancel_link_creation()
-    elif choice == "drop_as":
-        show_drop_as_menu()
-    elif choice == "drop_hardlink":
-        target = ui.input_dialog("Drop Hardlink", "Enter target directory:", str(Path.home()))
-        if target:
-            link_ops.drop_hardlink(target)
-    elif choice == "drop_symlink":
-        target = ui.input_dialog("Drop Symlink", "Enter target directory:", str(Path.home()))
-        if target:
-            link_ops.drop_symlink(target)
-    elif choice == "smart_copy":
-        handle_smart_copy(files)
-    elif choice == "hardlink_clone":
-        handle_hardlink_clone(files)
-    elif choice == "symlink_clone":
-        handle_symlink_clone(files)
-    elif choice == "link_properties":
-        handle_link_properties(files)
-    elif choice == "enumerate_hardlinks":
-        handle_enumerate_hardlinks(files)
-
-
 def main():
     parser = argparse.ArgumentParser(description="Dolphin Convert Actions")
     parser.add_argument("--smart-menu", action="store_true", help="Show smart context menu")
@@ -394,7 +304,6 @@ def main():
     parser.add_argument("--configure", action="store_true", help="Open configuration")
     
     # Link Shell Extension operations
-    parser.add_argument("--link-menu", action="store_true", help="Show Link Shell Extension menu")
     parser.add_argument("--pick-link-source", action="store_true", help="Pick files as link source")
     parser.add_argument("--cancel-link", action="store_true", help="Cancel link creation")
     parser.add_argument("--drop-as", help="Drop as specific type (hardlink, symlink, etc.)")
@@ -419,10 +328,6 @@ def main():
         batch_convert(args.files, args.batch, args.format)
         return
 
-    if args.link_menu:
-        show_link_menu(args.files)
-        return
-    
     if args.pick_link_source:
         handle_pick_link_source(args.files)
         return
@@ -464,7 +369,7 @@ def main():
         return
 
     if args.smart_menu or not any([
-        args.batch, args.configure, args.link_menu, args.pick_link_source,
+        args.batch, args.configure, args.pick_link_source,
         args.cancel_link, args.drop_as, args.drop_hardlink, args.drop_symlink,
         args.hardlink_clone, args.symlink_clone, args.smart_copy,
         args.link_properties, args.enumerate_hardlinks
