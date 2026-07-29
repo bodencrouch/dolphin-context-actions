@@ -2,7 +2,7 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=image/gif;video/*;audio/*;image/png;image/jpeg;
-Actions=toGif;toMp4;toWebm;extractAudio;uploadImgur;separator;smartMenu;separator2;configure;
+Actions=toGif;toMp4;toWebm;extractAudio;uploadImgur;smartMenu;configure;
 X-KDE-Submenu=Convert Actions
 Icon=document-convert
 
@@ -31,16 +31,10 @@ Name=Upload to Imgur
 Icon=internet-web-browser
 Exec=dolphin-convert-actions --batch imgur-upload %F
 
-[Desktop Action separator]
-Name=
-
 [Desktop Action smartMenu]
 Name=Show Actions…
 Icon=document-convert
 Exec=dolphin-convert-actions --smart-menu %F
-
-[Desktop Action separator2]
-Name=
 
 [Desktop Action configure]
 Name=Configure…

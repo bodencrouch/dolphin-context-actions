@@ -2,7 +2,7 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=audio/*;video/*;
-Actions=convertToMp3;convertToOgg;convertToFlac;convertToWav;convertToM4a;convertToOpus;convertToAlac;separator;configure;
+Actions=convertToMp3;convertToOgg;convertToFlac;convertToWav;convertToM4a;convertToOpus;convertToAlac;configure;
 X-KDE-Submenu=Audio Converter
 
 [Desktop Action convertToMp3]
@@ -39,9 +39,6 @@ Exec=dolphin-convert-actions --batch audio --format opus %F
 Name=Convert to ALAC (M4A)
 Icon=audio-x-generic
 Exec=dolphin-convert-actions --batch audio --format alac %F
-
-[Desktop Action separator]
-Name=
 
 [Desktop Action configure]
 Name=Configure…

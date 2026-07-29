@@ -137,14 +137,7 @@ def can_create_symlinks(path: str) -> bool:
 
 
 def pick_link_source(paths: list[str]):
-    """
-    Pick files/folders as source for link creation.
-    
-    Args:
-        paths: List of file/folder paths to pick
-    """
     if not paths:
-        ui.error_dialog("Pick Link Source", "No files or folders selected.")
         return False
     
     # Validate paths

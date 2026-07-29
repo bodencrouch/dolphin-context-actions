@@ -2,14 +2,40 @@
 Type=Service
 ServiceTypes=KonqPopupMenu/Plugin
 MimeType=inode/directory;
-Actions=pickLinkSourceBg;configure
-X-KDE-Priority=TopLevel
+Actions=pickLinkSourceBg;cancelLinkBg;separator1;dropAsBg;dropHardlinkBg;dropSymlinkBg;separator2;configure;
+X-KDE-Submenu=Link Shell Extension
 Icon=edit-link
 
 [Desktop Action pickLinkSourceBg]
 Name=Pick Link Source
 Icon=edit-link
 Exec=dolphin-convert-actions --pick-link-source %F
+
+[Desktop Action cancelLinkBg]
+Name=Cancel Link Creation
+Icon=edit-delete
+Exec=dolphin-convert-actions --cancel-link
+
+[Desktop Action separator1]
+Name=
+
+[Desktop Action dropAsBg]
+Name=Drop As...
+Icon=edit-link
+Exec=dolphin-convert-actions --link-menu %F
+
+[Desktop Action dropHardlinkBg]
+Name=Drop Hardlink
+Icon=edit-link
+Exec=dolphin-convert-actions --drop-hardlink --target-dir %d
+
+[Desktop Action dropSymlinkBg]
+Name=Drop Symlink
+Icon=edit-link
+Exec=dolphin-convert-actions --drop-symlink --target-dir %d
+
+[Desktop Action separator2]
+Name=
 
 [Desktop Action configure]
 Name=Configure...
