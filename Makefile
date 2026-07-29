@@ -1,6 +1,6 @@
 BINDIR ?= $(HOME)/.local/bin
 SERVICEDIR ?= $(HOME)/.local/share/kio/servicemenus
-CONFIGDIR ?= $(HOME)/.config/dolphin-convert-actions
+CONFIGDIR ?= $(HOME)/.config/dolphin-context-actions
 PLUGINBUILDDIR ?= build/kio-plugin
 PLUGINPREFIX ?= /usr
 
@@ -13,8 +13,8 @@ pip-install:
 
 install-menus:
 	mkdir -p $(SERVICEDIR) $(CONFIGDIR)
-	cp servicemenus/dolphin-convert-actions.desktop $(SERVICEDIR)/
-	chmod +x $(SERVICEDIR)/dolphin-convert-actions.desktop
+	cp servicemenus/dolphin-context-actions.desktop $(SERVICEDIR)/
+	chmod +x $(SERVICEDIR)/dolphin-context-actions.desktop
 	cp servicemenus/dolphin-audio-converter.desktop $(SERVICEDIR)/
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
@@ -32,8 +32,8 @@ install: pip-install install-menus install-plugin
 
 install-menus-only:
 	mkdir -p $(SERVICEDIR) $(CONFIGDIR)
-	cp servicemenus/dolphin-convert-actions.desktop $(SERVICEDIR)/
-	chmod +x $(SERVICEDIR)/dolphin-convert-actions.desktop
+	cp servicemenus/dolphin-context-actions.desktop $(SERVICEDIR)/
+	chmod +x $(SERVICEDIR)/dolphin-context-actions.desktop
 	cp servicemenus/dolphin-audio-converter.desktop $(SERVICEDIR)/
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
@@ -41,8 +41,8 @@ install-menus-only:
 	@echo "✓ Service menus installed."
 
 uninstall:
-	pip uninstall -y dolphin-convert-actions 2>/dev/null || true
-	rm -f $(SERVICEDIR)/dolphin-convert-actions.desktop
+	pip uninstall -y dolphin-context-actions 2>/dev/null || true
+	rm -f $(SERVICEDIR)/dolphin-context-actions.desktop
 	rm -f $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop

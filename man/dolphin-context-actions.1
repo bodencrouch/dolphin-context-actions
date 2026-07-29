@@ -1,12 +1,12 @@
-.TH DOLPHIN-CONVERT-ACTIONS 1 "July 2026" "dolphin-convert-actions 1.0.0" "User Commands"
+.TH DOLPHIN-CONTEXT-ACTIONS 1 "July 2026" "dolphin-context-actions 0.1.0" "User Commands"
 .SH NAME
-dolphin-convert-actions \- Smart context-menu media converter for Dolphin file manager
+dolphin-context-actions \- Media conversion and file-linking actions for Dolphin's context menu
 .SH SYNOPSIS
-.B dolphin-convert-actions
+.B dolphin-context-actions
 [\fI\,--smart-menu\/\fR] [\fI\,--batch MODE\/\fR] [\fI\,--format FMT\/\fR]
 [\fI\,--configure\/\fR] [\fI\,files...\/\fR]
 .SH DESCRIPTION
-\fBdolphin-convert-actions\fR is the backend for Dolphin (KDE file manager)
+\fBdolphin-context-actions\fR is the backend for Dolphin (KDE file manager)
 service menus that add intelligent, context-aware media conversion actions
 to the right-click menu.
 .PP
@@ -60,11 +60,11 @@ All conversions completed successfully.
 One or more errors occurred or the operation was cancelled.
 .SH FILES
 .TP
-\fI~/.config/dolphin-convert-actions/config.json\fR
+\fI~/.config/dolphin-context-actions/config.json\fR
 User configuration file. Stores default audio format, GIF preset, and
 Imgur Client ID.
 .TP
-\fI~/.local/share/kio/servicemenus/dolphin-convert-actions.desktop\fR
+\fI~/.local/share/kio/servicemenus/dolphin-context-actions.desktop\fR
 Service menu definition for the smart menu.
 .TP
 \fI~/.local/share/kio/servicemenus/dolphin-audio-converter.desktop\fR
@@ -72,19 +72,19 @@ Service menu definition for the dedicated audio submenu.
 .SH EXAMPLES
 .TP
 Show the smart menu for a GIF file:
-dolphin-convert-actions \-\-smart\-menu funny.gif
+dolphin-context-actions \-\-smart\-menu funny.gif
 .TP
 Batch convert audio files to FLAC:
-dolphin-convert-actions \-\-batch audio \-\-format flac *.wav
+dolphin-context-actions \-\-batch audio \-\-format flac *.wav
 .TP
 Convert a video to GIF with medium preset:
-dolphin-convert-actions \-\-batch video\-to\-gif \-\-format medium clip.mp4
+dolphin-context-actions \-\-batch video\-to\-gif \-\-format medium clip.mp4
 .TP
 Upload images to Imgur:
-dolphin-convert-actions \-\-batch imgur\-upload screenshot.png
+dolphin-context-actions \-\-batch imgur\-upload screenshot.png
 .TP
 Open configuration:
-dolphin-convert-actions \-\-configure
+dolphin-context-actions \-\-configure
 .SH DEPENDENCIES
 .TP
 Python 3.10+
@@ -97,6 +97,6 @@ libnotify
 .SH AUTHORS
 Brunner56 <brunner56@users.noreply.github.com>
 .SH REPORTING BUGS
-https://github.com/brunner56/dolphin-convert-actions/issues
+https://github.com/bodencrouch/dolphin-context-actions/issues
 .SH COPYRIGHT
 Copyright \(co 2025 Brunner56. License MIT.

@@ -24,7 +24,7 @@ def kdialog(*args) -> subprocess.CompletedProcess:
 
 def notify(title: str, msg: str, icon: str = "document-convert"):
     subprocess.run(
-        ["notify-send", "-i", icon, "-a", "Convert Actions", title, msg],
+        ["notify-send", "-i", icon, "-a", "Context Actions", title, msg],
         capture_output=True,
     )
 
