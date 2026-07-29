@@ -13,14 +13,22 @@ Makefile targets for development:
 ```bash
 make install        # Install package + service menus
 make install-menus  # Install just the .desktop files
+make plugin-build   # Build the KIO link action and its probe
+make install-plugin # Install the KIO plugin under Qt's plugin directory
 make uninstall      # Remove package + service menus
-make link-dev       # Symlink the entry script for live editing
 ```
 
 After any change to the `.desktop` files, restart Dolphin:
 
 ```bash
 killall dolphin
+```
+
+After changing `kio-plugin/`, rebuild and reinstall it before restarting
+Dolphin:
+
+```bash
+make install-plugin
 ```
 
 ## Project layout

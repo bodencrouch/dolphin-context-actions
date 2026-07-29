@@ -27,8 +27,6 @@ install_service_menus() {
     local desktop_files=(
         "servicemenus/dolphin-convert-actions.desktop"
         "servicemenus/dolphin-audio-converter.desktop"
-        "servicemenus/dolphin-link-extension.desktop"
-        "servicemenus/dolphin-link-extension-bg.desktop"
     )
 
     for f in "${desktop_files[@]}"; do
@@ -50,6 +48,21 @@ install_service_menus() {
             chmod +x "$dest"
         fi
     done
+
+    rm -f \
+        "${SERVICEDIR}/dolphin-link-extension.desktop" \
+        "${SERVICEDIR}/dolphin-link-extension-bg.desktop"
+}
+
+install_link_plugin() {
+    cmake \
+        -S kio-plugin \
+        -B build/kio-plugin \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_TESTING=ON \
+        -DCMAKE_INSTALL_PREFIX=/usr
+    cmake --build build/kio-plugin --parallel
+    sudo cmake --install build/kio-plugin
 }
 
 echo "=== Dolphin Convert Actions Installer ==="
@@ -61,8 +74,12 @@ echo ""
 install_service_menus
 echo ""
 
+install_link_plugin
+echo ""
+
 echo "=== Installation complete ==="
 echo "  Service menus: ${SERVICEDIR}/"
+echo "  Link plugin:   /usr/lib64/qt6/plugins/kf6/kfileitemaction/"
 echo "  Config dir:    ${CONFIGDIR}/"
 echo "  Bin dir:       ${HOME}/.local/bin/"
 echo ""

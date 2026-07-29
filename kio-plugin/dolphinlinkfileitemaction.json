@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Icon": "edit-link",
+        "MimeTypes": [
+            "application/octet-stream",
+            "inode/directory"
+        ],
+        "Name": "Link Shell Extension",
+        "Description": "Pick link sources and drop links in Dolphin"
+    }
+}

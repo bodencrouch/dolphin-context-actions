@@ -1,0 +1,3 @@
+recursive-include kio-plugin CMakeLists.txt *.cpp *.json
+include tests/link_menu_probe.cpp
+include tests/test_plugin_menu.sh

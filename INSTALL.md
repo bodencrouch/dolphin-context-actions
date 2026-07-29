@@ -17,7 +17,7 @@
 | Flatpak | `flatpak install --from https://flathub.org/…` |
 | AppImage | Download from Releases, `chmod +x`, run |
 
-After any method, restart Dolphin to load the service menus:
+After any method, restart Dolphin to load the menus:
 
 ```bash
 killall dolphin
@@ -72,7 +72,11 @@ cd dolphin-convert-actions
 make install
 ```
 
-This runs `pip install -e .` and copies the service menu `.desktop` files.
+This installs the Python package and media service menus. It also builds the
+KIO plugin that provides the root link actions. The plugin install uses `sudo`.
+
+The packaged Python-only methods do not install the KIO plugin. Use the source
+install when you want **Pick Link Source** at the context-menu root.
 
 ## Debian / Ubuntu (.deb)
 
@@ -146,6 +150,15 @@ All installation methods require these runtime dependencies:
 - **ffmpeg** (≥ 4.4) with `ffprobe`
 - **kdialog** (KDE dialog tool)
 - **libnotify** (desktop notifications)
+- **KIO 6** (Dolphin context-menu integration)
+
+Building from source also requires CMake, Extra CMake Modules, Qt 6 headers,
+and KIO 6 headers. On Fedora:
+
+```bash
+sudo dnf install cmake extra-cmake-modules qt6-qtbase-devel \
+  kf6-kcoreaddons-devel kf6-kio-devel
+```
 
 Install them:
 
@@ -172,6 +185,9 @@ The `.desktop` files get installed to one of these paths:
 | System package (.deb/.rpm/Arch) | `/usr/share/kio/servicemenus/` |
 | pip / make / pipx (user) | `~/.local/share/kio/servicemenus/` |
 
+The link plugin installs under Qt's `kf6/kfileitemaction` plugin directory.
+On Fedora, that path is `/usr/lib64/qt6/plugins/kf6/kfileitemaction/`.
+
 To see which files are installed:
 
 ```bash
@@ -184,9 +200,10 @@ ls -la ~/.local/share/kio/servicemenus/dolphin-convert-actions*
 
 1. Restart Dolphin: `killall dolphin`
 2. Check the service menu files are installed (see above)
-3. Verify the binary is in PATH: `which dolphin-convert-actions`
-4. Test the CLI directly: `dolphin-convert-actions --help`
-5. Check Dolphin's service menu directory config under
+3. Check `dolphinlinkfileitemaction.so` is in Qt's plugin directory
+4. Verify the binary is in PATH: `which dolphin-convert-actions`
+5. Test the CLI directly: `dolphin-convert-actions --help`
+6. Check Dolphin's service menu directory config under
    **Configure Dolphin → Context Menu → Download New Services…**
 
 ### "ffmpeg not found" error

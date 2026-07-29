@@ -23,9 +23,6 @@ NOT supported on Linux:
 import json
 import os
 import shutil
-import stat
-import subprocess
-from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
@@ -110,32 +107,6 @@ class LinkSource:
 source_manager = LinkSource()
 
 
-def can_create_hardlinks(path: str) -> bool:
-    """Check if hardlinks can be created for the given path."""
-    try:
-        st = os.stat(path)
-        # Check if filesystem supports hardlinks
-        # On Linux, most modern filesystems (ext4, btrfs, xfs, etc.) support hardlinks
-        test_file = Path(path).parent / ".hardlink_test_temp"
-        try:
-            # Create a test hardlink
-            os.link(path, str(test_file))
-            test_file.unlink()
-            return True
-        except (OSError, PermissionError):
-            return False
-    except OSError:
-        return False
-
-
-def can_create_symlinks(path: str) -> bool:
-    """Check if symlinks can be created (always true on Linux for regular users)."""
-    # On Linux, symlinks are generally supported
-    # Check write permission in parent directory
-    parent = Path(path).parent
-    return os.access(parent, os.W_OK)
-
-
 def pick_link_source(paths: list[str]):
     if not paths:
         return False
@@ -166,13 +137,13 @@ def cancel_link_creation():
         return False
 
 
-def _auto_rename_path(destination: Path, source: Path) -> Path:
+def _auto_rename_path(destination: Path, source: Path, kind: str = "Hardlink") -> Path:
     """
     Generate an auto-renamed path if destination exists.
     
     Pattern: "filename - Hardlink.ext", "filename - Hardlink (2).ext", etc.
     """
-    if not destination.exists():
+    if not destination.exists() and not destination.is_symlink():
         return destination
     
     stem = source.stem
@@ -182,23 +153,23 @@ def _auto_rename_path(destination: Path, source: Path) -> Path:
     counter = 1
     while True:
         if counter == 1:
-            new_name = f"{stem} - Hardlink{suffix}"
+            new_name = f"{stem} - {kind}{suffix}"
         else:
-            new_name = f"{stem} - Hardlink ({counter}).{suffix[1:]}"
+            new_name = f"{stem} - {kind} ({counter}){suffix}"
         
         new_path = parent / new_name
-        if not new_path.exists():
+        if not new_path.exists() and not new_path.is_symlink():
             return new_path
         counter += 1
 
 
-def _auto_rename_dir(destination: Path, source: Path) -> Path:
+def _auto_rename_dir(destination: Path, source: Path, kind: str = "Hardlink") -> Path:
     """
     Generate an auto-renamed path for directories.
     
     Pattern: "dirname - Hardlink", "dirname - Hardlink (2)", etc.
     """
-    if not destination.exists():
+    if not destination.exists() and not destination.is_symlink():
         return destination
     
     parent = destination.parent
@@ -207,12 +178,12 @@ def _auto_rename_dir(destination: Path, source: Path) -> Path:
     counter = 1
     while True:
         if counter == 1:
-            new_name = f"{name} - Hardlink"
+            new_name = f"{name} - {kind}"
         else:
-            new_name = f"{name} - Hardlink ({counter})"
+            new_name = f"{name} - {kind} ({counter})"
         
         new_path = parent / new_name
-        if not new_path.exists():
+        if not new_path.exists() and not new_path.is_symlink():
             return new_path
         counter += 1
 
@@ -257,25 +228,10 @@ def drop_hardlink(target_dir: str, relative_to: Optional[str] = None):
         
         try:
             if source_path.is_file():
-                # Create hardlink for file
-                if not can_create_hardlinks(source):
-                    raise OSError(f"Filesystem does not support hardlinks for: {source}")
                 os.link(source, str(dest_path))
                 created.append(str(dest_path))
             else:
-                # For directories, we need to create a directory and hardlink contents
-                # But directories themselves cannot be hardlinked on most Unix filesystems
-                # So we create a symlink instead for directories
-                ui.info_dialog(
-                    "Directory Hardlink",
-                    "Directories cannot be hardlinked on this filesystem.\n"
-                    "Creating a symbolic link instead."
-                )
-                # Create symlink to directory
-                if dest_path.exists():
-                    dest_path = _auto_rename_dir(dest_path, source_path)
-                os.symlink(source, str(dest_path))
-                created.append(str(dest_path))
+                raise OSError("Directories cannot be hardlinked. Use Drop Symlink.")
         except Exception as e:
             failed.append((source, str(e)))
     
@@ -290,8 +246,10 @@ def drop_hardlink(target_dir: str, relative_to: Optional[str] = None):
         error_msgs = [f"{src}: {err}" for src, err in failed]
         ui.error_dialog("Hardlink Errors", "\n".join(error_msgs))
     
-    # Clear sources after drop
-    source_manager.clear()
+    if failed:
+        source_manager.save([source for source, _ in failed])
+    else:
+        source_manager.clear()
     return len(created) > 0
 
 
@@ -331,9 +289,9 @@ def drop_symlink(target_dir: str, relative: bool = True):
         
         # Auto-rename if needed
         if source_path.is_file():
-            dest_path = _auto_rename_path(dest_path, source_path)
+            dest_path = _auto_rename_path(dest_path, source_path, "Symlink")
         else:
-            dest_path = _auto_rename_dir(dest_path, source_path)
+            dest_path = _auto_rename_dir(dest_path, source_path, "Symlink")
         
         try:
             if relative:
@@ -361,12 +319,14 @@ def drop_symlink(target_dir: str, relative: bool = True):
         error_msgs = [f"{src}: {err}" for src, err in failed]
         ui.error_dialog("Symlink Errors", "\n".join(error_msgs))
     
-    # Clear sources after drop
-    source_manager.clear()
+    if failed:
+        source_manager.save([source for source, _ in failed])
+    else:
+        source_manager.clear()
     return len(created) > 0
 
 
-def hardlink_clone(source_dir: str, target_dir: str, relative: bool = True):
+def hardlink_clone(source_dir: str, target_dir: str):
     """
     Create a hardlink clone of a directory tree.
     
@@ -376,7 +336,6 @@ def hardlink_clone(source_dir: str, target_dir: str, relative: bool = True):
     Args:
         source_dir: Source directory to clone
         target_dir: Destination directory
-        relative: Create relative symlinks for directories (not applicable here)
     """
     source_path = Path(source_dir)
     target_path = Path(target_dir)
@@ -393,82 +352,49 @@ def hardlink_clone(source_dir: str, target_dir: str, relative: bool = True):
         ui.error_dialog("Hardlink Clone", f"No write permission in: {target_path.parent}")
         return False
     
-    # Validate that we can create hardlinks
-    # Try with a sample file
-    try:
-        test_files = list(source_path.rglob("*"))
-        if test_files:
-            test_file = test_files[0]
-            if test_file.is_file():
-                if not can_create_hardlinks(str(test_file)):
-                    ui.error_dialog(
-                        "Hardlink Clone",
-                        "Filesystem does not support hardlinks"
-                    )
-                    return False
-    except Exception:
-        pass
-    
-    # Create target directory
-    target_path.mkdir(parents=True, exist_ok=True)
-    
     created_count = {"files": 0, "dirs": 0, "symlinks": 0}
-    failed = []
-    
-    # Walk through source and create hardlinks
-    for root, dirs, files in os.walk(source_dir):
-        # Compute relative path
-        rel_path = os.path.relpath(root, source_dir)
-        target_root = target_path / rel_path
-        
-        # Create directory
-        if not target_root.exists():
-            try:
-                target_root.mkdir(parents=True, exist_ok=True)
-                created_count["dirs"] += 1
-            except Exception as e:
-                failed.append(f"Directory {rel_path}: {e}")
-                continue
-        
-        # Create hardlinks for files
-        for file in files:
-            source_file = Path(root) / file
-            target_file = target_root / file
-            
-            try:
-                if target_file.exists():
-                    target_file.unlink()
-                os.link(source_file, target_file)
-                created_count["files"] += 1
-            except Exception as e:
-                # If hardlink fails, try symlink
-                try:
-                    rel_link = os.path.relpath(source_file, target_root)
-                    os.symlink(rel_link, target_file)
+    try:
+        target_path.mkdir(parents=True)
+        for root, dirs, files in os.walk(source_path, followlinks=False):
+            source_root = Path(root)
+            target_root = target_path / source_root.relative_to(source_path)
+            target_root.mkdir(parents=True, exist_ok=True)
+
+            for dirname in list(dirs):
+                source_item = source_root / dirname
+                target_item = target_root / dirname
+                if source_item.is_symlink():
+                    os.symlink(os.readlink(source_item), target_item)
+                    dirs.remove(dirname)
                     created_count["symlinks"] += 1
-                except Exception as e2:
-                    failed.append(f"File {rel_path}/{file}: {e2}")
-    
-    # Report results
+                else:
+                    target_item.mkdir(exist_ok=True)
+                    created_count["dirs"] += 1
+
+            for filename in files:
+                source_item = source_root / filename
+                target_item = target_root / filename
+                if source_item.is_symlink():
+                    os.symlink(os.readlink(source_item), target_item)
+                    created_count["symlinks"] += 1
+                else:
+                    os.link(source_item, target_item)
+                    created_count["files"] += 1
+    except Exception as error:
+        shutil.rmtree(target_path, ignore_errors=True)
+        ui.error_dialog("Hardlink Clone", f"Clone failed: {error}")
+        return False
+
     msg_parts = []
     if created_count["dirs"] > 0:
-        msg_parts.append(f"{created_count['dirs']} director(y/ies)")
+        msg_parts.append(f"{created_count['dirs']} directories")
     if created_count["files"] > 0:
-        msg_parts.append(f"{created_count['files']} hardlink(s)")
+        msg_parts.append(f"{created_count['files']} hardlinks")
     if created_count["symlinks"] > 0:
-        msg_parts.append(f"{created_count['symlinks']} symlink(s)")
-    
-    if msg_parts:
-        ui.notify(
-            "Hardlink Clone Created",
-            f"Created: {", ".join(msg_parts)}",
-            "folder"
-        )
-    
-    if failed:
-        ui.error_dialog("Clone Errors", "\n".join(failed))
-    
-    return len(failed) == 0
+        msg_parts.append(f"{created_count['symlinks']} symlinks")
+
+    ui.notify("Hardlink Clone Created", f"Created: {', '.join(msg_parts)}", "folder")
+    return True
 
 
 def symlink_clone(source_dir: str, target_dir: str, relative: bool = True):
@@ -498,74 +424,48 @@ def symlink_clone(source_dir: str, target_dir: str, relative: bool = True):
         ui.error_dialog("Symlink Clone", f"No write permission in: {target_path.parent}")
         return False
     
-    # Create target directory
-    target_path.mkdir(parents=True, exist_ok=True)
-    
     created_count = {"dirs": 0, "files": 0}
-    failed = []
-    
-    source_dir_abs = str(source_path.resolve())
-    target_dir_abs = str(target_path.resolve())
-    
-    # Walk through source and create symlinks
-    for root, dirs, files in os.walk(source_dir):
-        # Compute relative path
-        rel_path = os.path.relpath(root, source_dir)
-        target_root = target_path / rel_path
-        
-        # Create directory (actual directory, not symlink)
-        if not target_root.exists():
-            try:
-                target_root.mkdir(parents=True, exist_ok=True)
-                created_count["dirs"] += 1
-            except Exception as e:
-                failed.append(f"Directory {rel_path}: {e}")
-                continue
-        
-        # Create symlinks for files and subdirectories
-        for item in files + dirs:
-            source_item = Path(root) / item
-            target_item = target_root / item
-            
-            try:
-                if target_item.exists():
-                    target_item.unlink()
-                
-                if relative:
-                    # Create relative symlink
-                    rel_link = os.path.relpath(source_item, target_root)
+    try:
+        target_path.mkdir(parents=True)
+        for root, dirs, files in os.walk(source_path, followlinks=False):
+            source_root = Path(root)
+            target_root = target_path / source_root.relative_to(source_path)
+            target_root.mkdir(parents=True, exist_ok=True)
+
+            for dirname in list(dirs):
+                source_item = source_root / dirname
+                target_item = target_root / dirname
+                if source_item.is_symlink():
+                    link_target = os.path.relpath(source_item, target_root) if relative else source_item
+                    os.symlink(link_target, target_item)
+                    dirs.remove(dirname)
+                    created_count["files"] += 1
                 else:
-                    # Absolute symlink
-                    rel_link = source_item
-                
-                os.symlink(rel_link, target_item)
+                    target_item.mkdir(exist_ok=True)
+                    created_count["dirs"] += 1
+
+            for filename in files:
+                source_item = source_root / filename
+                target_item = target_root / filename
+                link_target = os.path.relpath(source_item, target_root) if relative else source_item
+                os.symlink(link_target, target_item)
                 created_count["files"] += 1
-            except Exception as e:
-                failed.append(f"Item {rel_path}/{item}: {e}")
-    
-    # Report results
+    except Exception as error:
+        shutil.rmtree(target_path, ignore_errors=True)
+        ui.error_dialog("Symlink Clone", f"Clone failed: {error}")
+        return False
+
     msg_parts = []
     if created_count["dirs"] > 0:
-        msg_parts.append(f"{created_count['dirs']} director(y/ies)")
+        msg_parts.append(f"{created_count['dirs']} directories")
     if created_count["files"] > 0:
-        msg_parts.append(f"{created_count['files']} symlink(s)")
-    
-    if msg_parts:
-        ui.notify(
-            "Symlink Clone Created",
-            f"Created: {", ".join(msg_parts)}",
-            "folder"
-        )
-    
-    if failed:
-        ui.error_dialog("Clone Errors", "\n".join(failed))
-    
-    return len(failed) == 0
+        msg_parts.append(f"{created_count['files']} symlinks")
+
+    ui.notify("Symlink Clone Created", f"Created: {', '.join(msg_parts)}", "folder")
+    return True
 
 
-def smart_copy(source: str, target_dir: str, 
-               outer_handling: str = "unroll", 
-               relative: bool = True):
+def smart_copy(source: str, target_dir: str):
     """
     Smart copy - copies directory structure while preserving hardlink/symlink relations.
     
@@ -574,13 +474,11 @@ def smart_copy(source: str, target_dir: str,
     Args:
         source: Source file or directory
         target_dir: Target directory
-        outer_handling: How to handle outer symlinks: "crop", "unroll", or "splice"
-        relative: Create relative symlinks when possible
     """
     source_path = Path(source)
     target_path = Path(target_dir)
     
-    if not source_path.exists():
+    if not source_path.exists() and not source_path.is_symlink():
         ui.error_dialog("Smart Copy", f"Source does not exist: {source}")
         return False
     
@@ -592,193 +490,58 @@ def smart_copy(source: str, target_dir: str,
         ui.error_dialog("Smart Copy", f"No write permission in: {target_dir}")
         return False
     
-    # Determine target name
-    target_name = source_path.name
-    if source_path.is_dir():
-        target_dest = target_path / target_name
-    else:
-        target_dest = target_path / target_name
-    
-    # Auto-rename if needed
+    target_dest = target_path / source_path.name
     if source_path.is_file():
-        target_dest = _auto_rename_path(target_dest, source_path)
+        target_dest = _auto_rename_path(target_dest, source_path, "Copy")
     else:
-        target_dest = _auto_rename_dir(target_dest, source_path)
-    
-    if target_dest.exists():
-        ui.error_dialog("Smart Copy", f"Destination already exists: {target_dest}")
-        return False
+        target_dest = _auto_rename_dir(target_dest, source_path, "Copy")
     
     created_count = {"files": 0, "dirs": 0, "symlinks": 0, "hardlinks": 0}
-    failed = []
-    
-    source_abs = str(source_path.resolve())
-    target_abs = str(target_path.resolve())
-    
-    # Build a map of inodes to identify hardlinks
-    # inode -> list of paths
-    inode_map: dict[tuple, list[str]] = defaultdict(list)
-    
-    # First pass: scan source and build inode map
-    for root, dirs, files in os.walk(source_abs):
-        for file in files:
-            filepath = Path(root) / file
-            try:
-                file_stat = os.stat(filepath)
-                inode_key = (file_stat.st_ino, file_stat.st_dev)
-                inode_map[inode_key].append(str(filepath))
-            except Exception:
-                pass
-    
-    # Second pass: copy with hardlink preservation
+    copied_inodes: dict[tuple[int, int], Path] = {}
+
     def _copy_recursive(src: Path, dst: Path):
         if src.is_symlink():
-            # Handle symlinks
-            link_target = os.readlink(src)
-            
-            # Determine if it's inner or outer
-            if link_target.startswith("/"):
-                target_abs_path = link_target
-            else:
-                target_abs_path = str((src.parent / link_target).resolve())
-            
-            source_ancestor = source_abs
-            if target_abs_path.startswith(source_ancestor):
-                # Inner symlink - relative to source
-                rel_in_source = os.path.relpath(target_abs_path, source_ancestor)
-                rel_in_target = os.path.relpath(
-                    target_abs_path, 
-                    os.path.join(target_abs, os.path.relpath(str(src), source_abs))
-                )
-                # Create relative symlink
-                try:
-                    if dst.exists():
-                        dst.unlink()
-                    os.symlink(rel_in_source, str(dst))
-                    created_count["symlinks"] += 1
-                except Exception as e:
-                    failed.append(f"Symlink {src}: {e}")
-            else:
-                # Outer symlink
-                if outer_handling == "crop":
-                    # Don't create the symlink
-                    pass
-                elif outer_handling == "unroll":
-                    # Copy the target content
-                    target_src = Path(target_abs_path)
-                    if target_src.exists():
-                        if dst.exists():
-                            if dst.is_dir():
-                                shutil.rmtree(dst)
-                            else:
-                                dst.unlink()
-                        if target_src.is_dir():
-                            shutil.copytree(target_src, dst)
-                        else:
-                            shutil.copy2(target_src, dst)
-                        created_count["files"] += 1
-                    else:
-                        failed.append(f"Outer symlink target missing: {target_abs_path}")
-                else:  # splice
-                    # Create symlink to original target (absolute or relative)
-                    try:
-                        if dst.exists():
-                            dst.unlink()
-                        if relative:
-                            rel = os.path.relpath(target_abs_path, dst.parent)
-                            os.symlink(rel, str(dst))
-                        else:
-                            os.symlink(target_abs_path, str(dst))
-                        created_count["symlinks"] += 1
-                    except Exception as e:
-                        failed.append(f"Outer symlink {src}: {e}")
+            os.symlink(os.readlink(src), dst)
+            created_count["symlinks"] += 1
         elif src.is_file():
-            # Handle regular files with hardlink preservation
-            file_stat = os.stat(src)
-            inode_key = (file_stat.st_ino, file_stat.st_dev)
-            
-            # Find all siblings in the source
-            siblings = inode_map.get(inode_key, [])
-            
-            # Determine relative path in source
-            rel_in_source = os.path.relpath(str(src), source_abs)
-            rel_in_target = os.path.relpath(
-                str(dst), 
-                target_abs
-            )
-            
-            # Check if this is the first sibling we're copying
-            # If so, copy the file. Otherwise, create a hardlink.
-            target_relative = os.path.join(target_abs, rel_in_target)
-            
-            # Check if we've already created a hardlink for this inode
-            already_linked = False
-            for sibling in siblings:
-                sibling_rel = os.path.relpath(sibling, source_abs)
-                sibling_target = Path(target_abs) / sibling_rel
-                if sibling_target.exists() and sibling_target != dst:
-                    # Already have a sibling, create hardlink
-                    try:
-                        if dst.exists():
-                            dst.unlink()
-                        os.link(str(sibling_target), str(dst))
-                        created_count["hardlinks"] += 1
-                        already_linked = True
-                        break
-                    except Exception:
-                        pass
-            
-            if not already_linked:
-                # First time seeing this inode, copy the file
-                try:
-                    if dst.parent.exists():
-                        pass
-                    else:
-                        dst.parent.mkdir(parents=True, exist_ok=True)
-                        created_count["dirs"] += 1
-                    shutil.copy2(src, dst)
-                    created_count["files"] += 1
-                except Exception as e:
-                    failed.append(f"File {src}: {e}")
+            file_stat = src.stat()
+            inode_key = (file_stat.st_dev, file_stat.st_ino)
+            if inode_key in copied_inodes:
+                os.link(copied_inodes[inode_key], dst)
+                created_count["hardlinks"] += 1
+            else:
+                shutil.copy2(src, dst)
+                copied_inodes[inode_key] = dst
+                created_count["files"] += 1
         elif src.is_dir():
-            # Create directory
-            if not dst.exists():
-                try:
-                    dst.mkdir(parents=True, exist_ok=True)
-                    created_count["dirs"] += 1
-                except Exception as e:
-                    failed.append(f"Directory {src}: {e}")
-                    return
-            
-            # Recurse into directory
+            dst.mkdir(parents=True)
+            created_count["dirs"] += 1
             for item in src.iterdir():
                 _copy_recursive(item, dst / item.name)
-    
-    # Start copying
-    _copy_recursive(source_path, target_dest)
-    
-    # Report results
+            shutil.copystat(src, dst, follow_symlinks=False)
+
+    try:
+        _copy_recursive(source_path, target_dest)
+    except Exception as error:
+        if target_dest.is_dir() and not target_dest.is_symlink():
+            shutil.rmtree(target_dest, ignore_errors=True)
+        else:
+            target_dest.unlink(missing_ok=True)
+        ui.error_dialog("Smart Copy", f"Copy failed: {error}")
+        return False
+
     msg_parts = []
     if created_count["dirs"] > 0:
-        msg_parts.append(f"{created_count['dirs']} director(y/ies)")
+        msg_parts.append(f"{created_count['dirs']} directories")
     if created_count["files"] > 0:
-        msg_parts.append(f"{created_count['files']} file(s)")
+        msg_parts.append(f"{created_count['files']} files")
     if created_count["hardlinks"] > 0:
-        msg_parts.append(f"{created_count['hardlinks']} hardlink(s)")
+        msg_parts.append(f"{created_count['hardlinks']} hardlinks")
     if created_count["symlinks"] > 0:
-        msg_parts.append(f"{created_count['symlinks']} symlink(s)")
-    
-    if msg_parts:
-        ui.notify(
-            "Smart Copy Created",
-            f"Copied: {", ".join(msg_parts)}",
-            "folder"
-        )
-    
-    if failed:
-        ui.error_dialog("Smart Copy Errors", "\n".join(failed[:10]))  # Limit to 10 errors
-    
-    return len(failed) == 0
+        msg_parts.append(f"{created_count['symlinks']} symlinks")
+
+    ui.notify("Smart Copy Created", f"Copied: {', '.join(msg_parts)}", "folder")
+    return True
 
 
 def enumerate_hardlinks(path: str) -> list[str]:
@@ -864,7 +627,7 @@ def show_hardlink_properties(path: str):
                 f"Device: {file_stat.st_dev}<br><br>"
             )
             if siblings:
-                msg += f"<b>Siblings:</b><br>"
+                msg += "<b>Siblings:</b><br>"
                 for s in siblings[:20]:  # Limit to 20 siblings
                     msg += f"• {s}<br>"
                 if len(siblings) > 20:
@@ -968,55 +731,31 @@ def drop_as(target_dir: str, drop_type: str, relative: bool = True):
     elif drop_type == "symlink":
         return drop_symlink(target_dir, relative)
     elif drop_type == "hardlink-clone":
-        # For clone, we expect a single directory source
         if len(sources) != 1:
             ui.error_dialog("Hardlink Clone", "Please pick exactly one directory for cloning.")
             return False
-        return hardlink_clone(sources[0], target_dir, relative)
+        source = Path(sources[0])
+        destination = _auto_rename_dir(Path(target_dir) / source.name, source, "Hardlink Clone")
+        success = hardlink_clone(str(source), str(destination))
     elif drop_type == "symlink-clone":
         if len(sources) != 1:
             ui.error_dialog("Symlink Clone", "Please pick exactly one directory for cloning.")
             return False
-        return symlink_clone(sources[0], target_dir, relative)
+        source = Path(sources[0])
+        destination = _auto_rename_dir(Path(target_dir) / source.name, source, "Symlink Clone")
+        success = symlink_clone(str(source), str(destination), relative)
     elif drop_type == "smart-copy":
         if len(sources) != 1:
             ui.error_dialog("Smart Copy", "Please pick exactly one file or directory for smart copy.")
             return False
-        return smart_copy(sources[0], target_dir, "unroll", relative)
+        success = smart_copy(sources[0], target_dir)
     else:
         ui.error_dialog("Drop As", f"Unknown drop type: {drop_type}")
         return False
 
-
-def get_drop_as_menu_items() -> list[tuple]:
-    """
-    Get the list of available Drop As menu items.
-    
-    Returns:
-        List of (action_id, display_name, icon) tuples
-    """
-    sources = source_manager.get()
-    
-    # Check what types of sources we have
-    has_files = any(Path(s).is_file() for s in sources)
-    has_dirs = any(Path(s).is_dir() for s in sources)
-    has_single = len(sources) == 1
-    single_is_dir = has_single and Path(sources[0]).is_dir()
-    
-    items = []
-    
-    # Always available
-    items.append(("hardlink", "Drop Hardlink", "edit-link"))
-    items.append(("symlink", "Drop Symlink", "edit-link"))
-    
-    # Clone options (only for single directory)
-    if single_is_dir:
-        items.append(("separator1", "", ""))
-        items.append(("hardlink-clone", "Drop Hardlink Clone", "folder"))
-        items.append(("symlink-clone", "Drop Symlink Clone", "folder"))
-        items.append(("smart-copy", "Drop Smart Copy", "folder"))
-    
-    return items
+    if success:
+        source_manager.clear()
+    return success
 
 
 def has_picked_sources() -> bool:
