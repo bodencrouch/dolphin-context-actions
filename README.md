@@ -36,22 +36,15 @@ files with all 7 formats available as one-click actions.
 - **Configurable defaults** — set your preferred audio format and GIF preset
 - **Notifications** — desktop notification on completion (or errors)
 
-### Link Shell Extension Features (NEW)
+### Create links from Dolphin
 
-Inspired by [Hermann Schinagl's Link Shell Extension](https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html) for Windows, this implementation brings link management functionality to KDE Dolphin on Linux:
+The context menu follows the stateful flow from [Link Shell Extension](https://schinagl.priv.at/nt/hardlinkshellext/linkshellextension.html):
 
-- **Pick Link Source** — Select files/folders to use as source for creating links
-- **Drop As...** — Submenu with link creation options:
-  - **Drop Hardlink** — Create hardlinks to picked files
-  - **Drop Symlink** — Create symbolic links to picked items
-- **Hardlink Clone** — Create a directory tree with hardlinks to source files
-- **Symlink Clone** — Create a directory tree with symlinks to source items
-- **Smart Copy** — Copy directory structure while preserving inner hardlink/symlink relations
-- **Link Properties** — View information about hardlinks and symlinks including reference counts
-- **Enumerate Hardlinks** — Find all hardlink siblings of a file
-- **Cancel Link Creation** — Cancel the current pick operation
-- **Auto Rename** — Automatic renaming when creating links in the same directory
-- **Relative Symlinks** — Option to create relative symlinks when possible
+- Before picking, **Pick Link Source** appears at the context-menu root.
+- After picking, **Drop Link As** and **Cancel Link Creation** replace it.
+- **Drop Link As** expands to hardlink, symlink, clone, copy, and inspection actions.
+- Successful drops return the menu to **Pick Link Source**.
+- Failed drops keep the source so you can retry.
 
 ## Installation
 
@@ -70,6 +63,8 @@ See [INSTALL.md](INSTALL.md) for every available method:
 | AppImage | Download and run from releases |
 | From source | `make install` |
 
+Use the source install to enable the root **Pick Link Source** action.
+
 After installation, restart Dolphin (`killall dolphin`) to load the service
 menus. The **Convert Actions** submenu will appear when you right-click any
 supported media file.
@@ -83,12 +78,12 @@ supported media file.
 4. Right-click an `.mp3` → **Audio Converter** → **Convert to FLAC**
 5. Right-click any image → **Convert Actions** → **Upload to Imgur**
 
-### Link Shell Extension Quick Start
+### Create a link
 
-1. Right-click any file/folder → **Link Shell Extension** → **Pick Link Source**
-2. Navigate to destination folder, right-click in background → **Link Shell Extension** → **Drop As…** → choose **Drop Hardlink** or **Drop Symlink**
-3. For directory clones: Right-click a folder → **Link Shell Extension** → **Hardlink Clone…** or **Symlink Clone…**, then enter target directory
-4. To view link info: Right-click any file → **Link Shell Extension** → **Link Properties**
+1. Right-click a file or folder, then choose **Pick Link Source**.
+2. Right-click the destination folder or its background.
+3. Open **Drop Link As**.
+4. Choose **Drop Hardlink**, **Drop Symlink**, or another drop action.
 
 ## Configuration
 
@@ -108,6 +103,7 @@ Configuration is stored in `~/.config/dolphin-convert-actions/config.json`.
 - **ffmpeg** (≥ 4.4) with ffprobe (for media conversion only)
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
+- **KIO 6** (for the root context-menu plugin)
 
 ## Limitations
 
@@ -117,12 +113,12 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
 
 - **No Junctions** — NTFS Junctions are Windows-specific and cannot be created on Linux
 - **No Volume Mountpoints** — Windows Volume Mountpoints are not supported on Linux
-- **Directory Hardlinks** — On most Unix filesystems, directories cannot be hardlinked (symlinks are used instead)
-- **Smart Move** — Automatic interception of file manager move operations is not available; use the manual Smart Copy + delete original workflow
+- **Directory Hardlinks** — Unix filesystems do not allow them. Use **Drop Symlink**.
+- **Smart Move** — Dolphin does not expose file moves to context-menu plugins.
 - **Reparse Points** — NTFS-specific reparse point operations are not applicable on Linux
 - **Backup Mode** — The Windows version's backup mode with elevated privileges is not implemented
 
-All other features (hardlinks, symlinks, clones, smart copy, link properties, enumeration) work as expected on Linux.
+The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
 ## Project structure
 
@@ -130,6 +126,7 @@ All other features (hardlinks, symlinks, clones, smart copy, link properties, en
 ├── pyproject.toml              # Python package definition
 ├── Makefile                    # Build/install/uninstall
 ├── install.sh                  # Manual install script
+├── kio-plugin/                 # Stateful root context-menu plugin
 ├── debian/                     # Debian packaging
 ├── packaging/
 │   ├── rpm/                    # RPM spec
@@ -139,9 +136,7 @@ All other features (hardlinks, symlinks, clones, smart copy, link properties, en
 │   └── appimage/               # AppImage builder
 ├── servicemenus/
 │   ├── dolphin-convert-actions.desktop         # Smart menu (all media)
-│   ├── dolphin-audio-converter.desktop         # Dedicated audio submenu
-│   ├── dolphin-link-extension.desktop          # Link Shell Extension menu
-│   └── dolphin-link-extension-bg.desktop       # Link Shell Extension (folder background)
+│   └── dolphin-audio-converter.desktop         # Dedicated audio submenu
 ├── src/dolphin_convert_actions/
 │   ├── cli.py                  # CLI entry point + smart dispatch
 │   ├── ui.py                   # kdialog progress bars / dialogs

@@ -1,25 +1,19 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-07-29)
 
-- **Link Shell Extension integration** — Inspired by Hermann Schinagl's Link
-  Shell Extension for Windows, brings comprehensive link management to KDE Dolphin:
-  - Pick Link Source — select files/folders as source for link creation
-  - Drop Hardlink / Drop Symlink — create links from picked sources
-  - Drop As... submenu with all link creation options
-  - Hardlink Clone — create directory tree with hardlinks to source files
-  - Symlink Clone — create directory tree with symlinks to source items
-  - Smart Copy — copy directory structure preserving inner hardlink/symlink
-    relations with configurable outer symlink handling (crop, unroll, splice)
+- **Link Shell Extension integration** — Uses a stateful KIO plugin:
+  - Pick Link Source appears at the context-menu root
+  - Drop Link As and Cancel Link Creation replace it after a pick
+  - Drop Link As contains hardlink, symlink, clone, smart copy, and inspection actions
   - Link Properties — view link information including reference counts,
     inodes, and sibling locations
   - Enumerate Hardlinks — find all hardlink siblings of a file
   - Cancel Link Creation — cancel current pick operation
   - Auto Rename — automatic renaming when creating links in same directory
   - Persistent source storage — picked sources survive between sessions
-- New service menus: `dolphin-link-extension.desktop` (file context) and
-  `dolphin-link-extension-bg.desktop` (folder background context)
-- Updated UI module to support custom dialog sizes
+- Removed the static link service menus and their extra Actions submenu
+- Link actions now update from persisted pick state without another dialog
 
 ## 1.0.0 (2026-07-25)
 

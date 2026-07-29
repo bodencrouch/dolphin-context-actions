@@ -1,0 +1,3 @@
+/build/kio-plugin/
+__pycache__/
+*.py[cod]
