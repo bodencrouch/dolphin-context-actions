@@ -1,2 +1,0 @@
-[console_scripts]
-dolphin-convert-actions = dolphin_convert_actions.cli:main

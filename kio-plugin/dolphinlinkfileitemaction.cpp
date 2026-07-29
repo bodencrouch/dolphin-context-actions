@@ -159,9 +159,9 @@ private:
         QAction *action = menu->addAction(QIcon::fromTheme(icon), text);
         action->setEnabled(enabled);
         connect(action, &QAction::triggered, this, [this, arguments]() {
-            const QString executable = QStandardPaths::findExecutable(QStringLiteral("dolphin-convert-actions"));
+            const QString executable = QStandardPaths::findExecutable(QStringLiteral("dolphin-context-actions"));
             if (executable.isEmpty() || !QProcess::startDetached(executable, arguments)) {
-                Q_EMIT error(tr("Could not start dolphin-convert-actions."));
+                Q_EMIT error(tr("Could not start dolphin-context-actions."));
             }
         });
     }

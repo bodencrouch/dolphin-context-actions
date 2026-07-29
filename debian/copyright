@@ -1,7 +1,7 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: dolphin-convert-actions
+Upstream-Name: dolphin-context-actions
 Upstream-Contact: Brunner56 <brunner56@users.noreply.github.com>
-Source: https://github.com/brunner56/dolphin-convert-actions
+Source: https://github.com/bodencrouch/dolphin-context-actions
 
 Files: *
 Copyright: 2025 Brunner56

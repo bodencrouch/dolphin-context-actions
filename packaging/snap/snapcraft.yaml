@@ -1,7 +1,7 @@
-name: dolphin-convert-actions
+name: dolphin-context-actions
 base: core24
-version: "1.0.0"
-summary: Smart context-menu media converter for Dolphin file manager
+version: "0.1.0"
+summary: Media conversion and file-linking actions for Dolphin's context menu
 description: |
   Adds intelligent right-click actions to Dolphin (KDE file manager) for
   converting media files. The menu adapts to file type — right-click a GIF
@@ -13,10 +13,10 @@ grade: stable
 confinement: strict
 
 parts:
-  dolphin-convert-actions:
+  dolphin-context-actions:
     plugin: python
-    source: https://github.com/brunner56/dolphin-convert-actions.git
-    source-tag: v1.0.0
+    source: https://github.com/bodencrouch/dolphin-context-actions.git
+    source-tag: v0.1.0
     python-packages: []
     build-packages:
       - ffmpeg
@@ -26,8 +26,8 @@ parts:
       - libnotify-bin
 
 apps:
-  dolphin-convert-actions:
-    command: bin/dolphin-convert-actions
+  dolphin-context-actions:
+    command: bin/dolphin-context-actions
     plugs:
       - home
       - desktop

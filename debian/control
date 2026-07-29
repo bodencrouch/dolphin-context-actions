@@ -1,13 +1,13 @@
-Source: dolphin-convert-actions
+Source: dolphin-context-actions
 Section: utils
 Priority: optional
 Maintainer: Brunner56 <brunner56@users.noreply.github.com>
 Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
 Standards-Version: 4.6.2
-Homepage: https://github.com/brunner56/dolphin-convert-actions
+Homepage: https://github.com/bodencrouch/dolphin-context-actions
 Rules-Requires-Root: no
 
-Package: dolphin-convert-actions
+Package: dolphin-context-actions
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends},
          ffmpeg (>= 7:4.4),
@@ -15,7 +15,7 @@ Depends: ${python3:Depends}, ${misc:Depends},
          python3 (>= 3.10),
 Recommends: notify-send (>= 0.8),
 Suggests: dolphin (>= 4:20.04),
-Description: Smart context-menu media converter for Dolphin file manager
+Description: Media conversion and file-linking actions for Dolphin's context menu
  Adds intelligent right-click actions to Dolphin (KDE file manager) for
  converting media files. The menu adapts to file type — right-click a GIF
  to convert it to MP4 or upload to Imgur; right-click a video to convert

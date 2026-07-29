@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-APP_NAME = "dolphin-convert-actions"
+APP_NAME = "dolphin-context-actions"
 CONFIG_DIR = Path.home() / ".config" / APP_NAME
 CONFIG_FILE = CONFIG_DIR / "config.json"
 
