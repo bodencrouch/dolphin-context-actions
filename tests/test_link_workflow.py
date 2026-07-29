@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from dolphin_convert_actions import cli, link_ops, ui
+from dolphin_context_actions import cli, link_ops, ui
 
 
 class LinkWorkflowTest(unittest.TestCase):

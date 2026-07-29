@@ -6,8 +6,8 @@
 override_dh_auto_install:
 	dh_auto_install
 	# Install Dolphin service menu .desktop files
-	mkdir -p $(CURDIR)/debian/dolphin-convert-actions/usr/share/kio/servicemenus
-	cp servicemenus/dolphin-convert-actions.desktop \
-	   $(CURDIR)/debian/dolphin-convert-actions/usr/share/kio/servicemenus/
+	mkdir -p $(CURDIR)/debian/dolphin-context-actions/usr/share/kio/servicemenus
+	cp servicemenus/dolphin-context-actions.desktop \
+	   $(CURDIR)/debian/dolphin-context-actions/usr/share/kio/servicemenus/
 	cp servicemenus/dolphin-audio-converter.desktop \
-	   $(CURDIR)/debian/dolphin-convert-actions/usr/share/kio/servicemenus/
+	   $(CURDIR)/debian/dolphin-context-actions/usr/share/kio/servicemenus/

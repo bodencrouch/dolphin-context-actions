@@ -1,6 +1,6 @@
-# Dolphin Convert Actions
+# Dolphin Context Actions
 
-Smart context-menu media converter for the Dolphin file manager (KDE).
+Adds media conversion and file-linking actions to Dolphin's right-click menu.
 
 Right-click any media file in Dolphin and get only the conversion actions
 that make sense — no clutter, no irrelevant options.
@@ -52,31 +52,31 @@ See [INSTALL.md](INSTALL.md) for every available method:
 
 | Method | Command |
 |---|---|
-| pipx | `pipx install dolphin-convert-actions` |
-| uvx | `uvx dolphin-convert-actions` |
-| pip (user) | `pip install --user dolphin-convert-actions` |
-| Debian/Ubuntu | `sudo apt install ./dolphin-convert-actions_1.0.0-1_all.deb` |
-| Fedora/openSUSE | `sudo rpm -i dolphin-convert-actions-1.0.0-1.noarch.rpm` |
+| pipx | `pipx install dolphin-context-actions` |
+| uvx | `uvx dolphin-context-actions` |
+| pip (user) | `pip install --user dolphin-context-actions` |
+| Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
+| Fedora/openSUSE | `sudo rpm -i dolphin-context-actions-0.1.0-1.noarch.rpm` |
 | Arch Linux | `makepkg -si` (from packaging/arch/) |
-| Snap | `snap install dolphin-convert-actions` |
-| Flatpak | `flatpak install io.github.brunner56.dolphin-convert-actions` |
+| Snap | `snap install dolphin-context-actions` |
+| Flatpak | `flatpak install io.github.bodencrouch.dolphin-context-actions` |
 | AppImage | Download and run from releases |
 | From source | `make install` |
 
 Use the source install to enable the root **Pick Link Source** action.
 
 After installation, restart Dolphin (`killall dolphin`) to load the service
-menus. The **Convert Actions** submenu will appear when you right-click any
+menus. The **Context Actions** submenu will appear when you right-click any
 supported media file.
 
 ## Quick start
 
 1. Install (see above) and restart Dolphin
-2. Right-click a `.gif` → **Convert Actions** → **Convert to MP4**
-3. Right-click a `.mp4` → **Convert Actions** → **Convert to GIF…** →
+2. Right-click a `.gif` → **Context Actions** → **Convert to MP4**
+3. Right-click a `.mp4` → **Context Actions** → **Convert to GIF…** →
    choose a preset
 4. Right-click an `.mp3` → **Audio Converter** → **Convert to FLAC**
-5. Right-click any image → **Convert Actions** → **Upload to Imgur**
+5. Right-click any image → **Context Actions** → **Upload to Imgur**
 
 ### Create a link
 
@@ -87,7 +87,7 @@ supported media file.
 
 ## Configuration
 
-Right-click any media file → **Convert Actions** → **Configure…** to open
+Right-click any media file → **Context Actions** → **Configure…** to open
 the settings dialog where you can set:
 
 - **Default audio format** — the format used when converting audio
@@ -95,7 +95,7 @@ the settings dialog where you can set:
 - **Imgur Client ID** — required for Imgur upload (register at
   https://api.imgur.com/oauth2/addclient)
 
-Configuration is stored in `~/.config/dolphin-convert-actions/config.json`.
+Configuration is stored in `~/.config/dolphin-context-actions/config.json`.
 
 ## Requirements
 
@@ -135,9 +135,9 @@ The drop menu supports hardlinks, symlinks, clones, smart copy, link properties,
 │   ├── flatpak/                # Flatpak manifest
 │   └── appimage/               # AppImage builder
 ├── servicemenus/
-│   ├── dolphin-convert-actions.desktop         # Smart menu (all media)
+│   ├── dolphin-context-actions.desktop         # Smart menu (all media)
 │   └── dolphin-audio-converter.desktop         # Dedicated audio submenu
-├── src/dolphin_convert_actions/
+├── src/dolphin_context_actions/
 │   ├── cli.py                  # CLI entry point + smart dispatch
 │   ├── ui.py                   # kdialog progress bars / dialogs
 │   ├── config.py               # Config management
@@ -150,7 +150,7 @@ The drop menu supports hardlinks, symlinks, clones, smart copy, link properties,
 │   ├── CONFIGURATION.md        # Full config reference
 │   └── DEVELOPMENT.md          # Contributor guide
 └── man/
-    └── dolphin-convert-actions.1
+    └── dolphin-context-actions.1
 ```
 
 ## Building packages
@@ -164,7 +164,7 @@ python -m build
 dpkg-buildpackage -us -uc
 
 # RPM
-rpmbuild -ba packaging/rpm/dolphin-convert-actions.spec
+rpmbuild -ba packaging/rpm/dolphin-context-actions.spec
 
 # Arch Linux
 cd packaging/arch && makepkg -si

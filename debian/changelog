@@ -1,4 +1,4 @@
-dolphin-convert-actions (1.0.0-1) unstable; urgency=medium
+dolphin-context-actions (0.1.0-1) unstable; urgency=medium
 
   * Initial release.
   * Smart two-directional context menus for Dolphin (KDE file manager).

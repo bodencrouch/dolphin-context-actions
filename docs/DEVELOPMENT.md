@@ -3,8 +3,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/brunner56/dolphin-convert-actions.git
-cd dolphin-convert-actions
+git clone https://github.com/bodencrouch/dolphin-context-actions.git
+cd dolphin-context-actions
 pip install -e .
 ```
 
@@ -34,9 +34,9 @@ make install-plugin
 ## Project layout
 
 ```
-src/dolphin_convert_actions/
+src/dolphin_context_actions/
 ├── __init__.py              # Package marker
-├── __main__.py              # `python -m dolphin_convert_actions` support
+├── __main__.py              # `python -m dolphin_context_actions` support
 ├── cli.py                   # CLI parser + smart menu dispatch
 ├── config.py                # JSON config read/write
 ├── ui.py                    # kdialog/qdbus progress bar helpers
@@ -48,7 +48,7 @@ src/dolphin_convert_actions/
 
 ## Adding a new audio format
 
-1. Add the preset to `AUDIO_PRESETS` in `src/dolphin_convert_actions/converters/audio.py`
+1. Add the preset to `AUDIO_PRESETS` in `src/dolphin_context_actions/converters/audio.py`
 2. Add a `[Desktop Action convertToXxx]` block to `servicemenus/dolphin-audio-converter.desktop`
 3. Add the format to the smart menu choices in `cli.py` (both `is_gif` and
    `is_audio` sections)
@@ -73,7 +73,7 @@ git push --tags
 # Build all package formats
 python -m build                          # wheel + sdist
 dpkg-buildpackage -us -uc                # .deb
-rpmbuild -ba packaging/rpm/dolphin-convert-actions.spec  # .rpm
+rpmbuild -ba packaging/rpm/dolphin-context-actions.spec  # .rpm
 
 # Create a GitHub release with the built packages
 ```

@@ -1,10 +1,10 @@
 version: 1
 AppDir:
   app_info:
-    id: io.github.brunner56.dolphin-convert-actions
-    name: dolphin-convert-actions
-    version: "1.0.0"
-    exec: usr/bin/dolphin-convert-actions
+    id: io.github.bodencrouch.dolphin-context-actions
+    name: dolphin-context-actions
+    version: "0.1.0"
+    exec: usr/bin/dolphin-context-actions
     icon: document-convert
 
   apt:
@@ -33,7 +33,7 @@ AppDir:
   test:
     ubuntu:
       image: appimagecrafters/appimage-builder:latest
-      command: /AppDir/usr/bin/dolphin-convert-actions --help
+      command: /AppDir/usr/bin/dolphin-context-actions --help
 
 AppImage:
   update-information: None

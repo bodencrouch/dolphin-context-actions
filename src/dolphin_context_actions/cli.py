@@ -18,7 +18,7 @@ def _ffmpeg_check():
     for tool in ("ffmpeg", "ffprobe"):
         if not shutil.which(tool):
             ui.error_dialog(
-                "Convert Actions - Missing Dependency",
+                "Context Actions - Missing Dependency",
                 f"<b>{tool}</b> not found.\n\n"
                 "Install ffmpeg:\n"
                 "• <tt>sudo apt install ffmpeg</tt> (Debian/Ubuntu/Mint)\n"
@@ -42,7 +42,7 @@ def mime_type(filepath: str) -> str | None:
 
 def smart_menu(files: list[str]):
     if not files:
-        ui.error_dialog("Convert Actions", "No files selected.")
+        ui.error_dialog("Context Actions", "No files selected.")
         return
 
     _ffmpeg_check()
@@ -96,11 +96,11 @@ def smart_menu(files: list[str]):
             ui.info_dialog("Audio Converter", f"Already in the only supported format ({source_fmt.upper()}).")
             return
     else:
-        ui.error_dialog("Convert Actions", f"Unsupported file type: {mime or ext}")
+        ui.error_dialog("Context Actions", f"Unsupported file type: {mime or ext}")
         return
 
     choice = ui.menu_dialog(
-        "Convert Actions",
+        "Context Actions",
         f"Actions for: {Path(files[0]).name}",
         choices,
     )
@@ -161,7 +161,7 @@ def run_configure():
     current_video = cfg.get("video_preset", "medium")
 
     sel = ui.menu_dialog(
-        "Convert Actions - Configure",
+        "Context Actions - Configure",
         f"Default audio format:  {audio.AUDIO_PRESETS.get(current_audio, {}).get('name', current_audio)}\n"
         f"Default GIF preset:  {video.GIF_PRESET_NAMES.get(current_video, current_video)}\n\n"
         "Choose a setting to change:",
@@ -294,7 +294,7 @@ def handle_enumerate_hardlinks(files: list[str]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dolphin Convert Actions")
+    parser = argparse.ArgumentParser(description="Dolphin Context Actions")
     parser.add_argument("--smart-menu", action="store_true", help="Show smart context menu")
     parser.add_argument("--batch", choices=[
         "audio", "video-to-gif", "video-to-mp4", "video-to-webm",

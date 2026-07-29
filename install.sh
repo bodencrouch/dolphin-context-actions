@@ -5,10 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 SERVICEDIR="${HOME}/.local/share/kio/servicemenus"
-CONFIGDIR="${HOME}/.config/dolphin-convert-actions"
+CONFIGDIR="${HOME}/.config/dolphin-context-actions"
 
 is_installed() {
-    pip show dolphin-convert-actions >/dev/null 2>&1
+    pip show dolphin-context-actions >/dev/null 2>&1
 }
 
 install_python_package() {
@@ -25,7 +25,7 @@ install_service_menus() {
     mkdir -p "$SERVICEDIR" "$CONFIGDIR"
 
     local desktop_files=(
-        "servicemenus/dolphin-convert-actions.desktop"
+        "servicemenus/dolphin-context-actions.desktop"
         "servicemenus/dolphin-audio-converter.desktop"
     )
 
@@ -65,7 +65,7 @@ install_link_plugin() {
     sudo cmake --install build/kio-plugin
 }
 
-echo "=== Dolphin Convert Actions Installer ==="
+echo "=== Dolphin Context Actions Installer ==="
 echo ""
 
 install_python_package

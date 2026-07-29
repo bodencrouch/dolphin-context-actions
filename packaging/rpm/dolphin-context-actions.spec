@@ -1,14 +1,14 @@
-%define pname dolphin-convert-actions
-%define ver 1.0.0
-%define unver 1.0.0
+%define pname dolphin-context-actions
+%define ver 0.1.0
+%define unver 0.1.0
 
 Name:     %{pname}
 Version:  %{ver}
 Release:  1%{?dist}
-Summary:  Smart context-menu media converter for Dolphin file manager
+Summary:  Media conversion and file-linking actions for Dolphin's context menu
 
 License:  MIT
-URL:      https://github.com/brunner56/dolphin-convert-actions
+URL:      https://github.com/bodencrouch/dolphin-context-actions
 Source0:  %{url}/archive/v%{unver}/%{pname}-%{unver}.tar.gz
 
 BuildArch: noarch
@@ -42,19 +42,19 @@ Features:
 %py3_install
 # Install Dolphin service menus
 install -d %{buildroot}%{_datadir}/kio/servicemenus
-install -m 644 servicemenus/dolphin-convert-actions.desktop \
+install -m 644 servicemenus/dolphin-context-actions.desktop \
   %{buildroot}%{_datadir}/kio/servicemenus/
 install -m 644 servicemenus/dolphin-audio-converter.desktop \
   %{buildroot}%{_datadir}/kio/servicemenus/
 
 %files
-%{_bindir}/dolphin-convert-actions
-%{python3_sitelib}/dolphin_convert_actions*
-%{_datadir}/kio/servicemenus/dolphin-convert-actions.desktop
+%{_bindir}/dolphin-context-actions
+%{python3_sitelib}/dolphin_context_actions*
+%{_datadir}/kio/servicemenus/dolphin-context-actions.desktop
 %{_datadir}/kio/servicemenus/dolphin-audio-converter.desktop
 %license LICENSE
 %doc README.md
 
 %changelog
-* Sat Jul 25 2026 Brunner56 <brunner56@users.noreply.github.com> - 1.0.0-1
+* Sat Jul 25 2026 Brunner56 <brunner56@users.noreply.github.com> - 0.1.0-1
 - Initial package

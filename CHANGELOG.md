@@ -1,21 +1,9 @@
 # Changelog
 
-## 1.1.0 (2026-07-29)
+## 0.1.0 (2026-07-29)
 
-- **Link Shell Extension integration** — Uses a stateful KIO plugin:
-  - Pick Link Source appears at the context-menu root
-  - Drop Link As and Cancel Link Creation replace it after a pick
-  - Drop Link As contains hardlink, symlink, clone, smart copy, and inspection actions
-  - Link Properties — view link information including reference counts,
-    inodes, and sibling locations
-  - Enumerate Hardlinks — find all hardlink siblings of a file
-  - Cancel Link Creation — cancel current pick operation
-  - Auto Rename — automatic renaming when creating links in same directory
-  - Persistent source storage — picked sources survive between sessions
-- Removed the static link service menus and their extra Actions submenu
-- Link actions now update from persisted pick state without another dialog
-
-## 1.0.0 (2026-07-25)
+First release as **Dolphin Context Actions** (renamed from
+`dolphin-convert-actions`, versioning restarts from 0.1.0).
 
 - Smart two-directional context menus for Dolphin — shows only relevant
   conversion actions based on file MIME type
@@ -33,6 +21,15 @@
   kdialog configure dialog
 - Desktop notifications on job completion
 - Batch processing of multiple selected files
+- **Link Shell Extension integration** — stateful KIO plugin:
+  - Pick Link Source appears at the context-menu root
+  - Drop Link As and Cancel Link Creation replace it after a pick
+  - Drop Link As contains hardlink, symlink, clone, smart copy, and inspection actions
+  - Link Properties — view link information including reference counts,
+    inodes, and sibling locations
+  - Enumerate Hardlinks — find all hardlink siblings of a file
+  - Auto Rename — automatic renaming when creating links in same directory
+  - Persistent source storage — picked sources survive between sessions
 - Packaging: Python wheel, Debian (.deb), RPM, Arch Linux (PKGBUILD), Snap,
   Flatpak, AppImage
 - Install via pipx, uv, pip, or from source with `make install`

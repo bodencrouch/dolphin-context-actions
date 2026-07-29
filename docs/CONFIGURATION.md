@@ -2,7 +2,7 @@
 
 ## Interactive configuration
 
-Right-click any media file in Dolphin → **Convert Actions** → **Configure…**
+Right-click any media file in Dolphin → **Context Actions** → **Configure…**
 to open a kdialog menu where you can set:
 
 - **Default audio format** — the target format used when converting audio
@@ -16,7 +16,7 @@ to open a kdialog menu where you can set:
 
 ## Configuration file
 
-Configuration is stored in `~/.config/dolphin-convert-actions/config.json`:
+Configuration is stored in `~/.config/dolphin-context-actions/config.json`:
 
 ```json
 {
@@ -38,7 +38,7 @@ The `.desktop` files control when the context menus appear:
 
 | File | MIME types | Purpose |
 |---|---|---|
-| `dolphin-convert-actions.desktop` | `image/gif;video/*;audio/*;image/png;image/jpeg;` | Smart adaptive menu |
+| `dolphin-context-actions.desktop` | `image/gif;video/*;audio/*;image/png;image/jpeg;` | Smart adaptive menu |
 | `dolphin-audio-converter.desktop` | `audio/*;video/*;` | Dedicated audio conversion submenu |
 
 To modify which file types trigger the menus, edit these files and change
@@ -51,5 +51,5 @@ desktop notifications. For detailed ffmpeg output, run the CLI directly
 from a terminal:
 
 ```bash
-dolphin-convert-actions --batch video-to-gif video.mp4
+dolphin-context-actions --batch video-to-gif video.mp4
 ```

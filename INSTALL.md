@@ -4,16 +4,16 @@
 
 | Method | Command |
 |---|---|
-| pipx | `pipx install dolphin-convert-actions` |
-| uvx | `uvx dolphin-convert-actions` |
-| pip (user) | `pip install --user dolphin-convert-actions` |
-| pip (system) | `sudo pip install dolphin-convert-actions` |
+| pipx | `pipx install dolphin-context-actions` |
+| uvx | `uvx dolphin-context-actions` |
+| pip (user) | `pip install --user dolphin-context-actions` |
+| pip (system) | `sudo pip install dolphin-context-actions` |
 | From source | `make install` |
-| Debian/Ubuntu | `sudo apt install ./dolphin-convert-actions_1.0.0-1_all.deb` |
-| Fedora | `sudo dnf install dolphin-convert-actions-1.0.0-1.noarch.rpm` |
-| openSUSE | `sudo zypper install dolphin-convert-actions-1.0.0-1.noarch.rpm` |
+| Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
+| Fedora | `sudo dnf install dolphin-context-actions-0.1.0-1.noarch.rpm` |
+| openSUSE | `sudo zypper install dolphin-context-actions-0.1.0-1.noarch.rpm` |
 | Arch Linux | `makepkg -si` (from `packaging/arch/`) |
-| Snap | `snap install dolphin-convert-actions` |
+| Snap | `snap install dolphin-context-actions` |
 | Flatpak | `flatpak install --from https://flathub.org/…` |
 | AppImage | Download from Releases, `chmod +x`, run |
 
@@ -31,14 +31,14 @@ killall dolphin
 isolated environments and makes them available globally.
 
 ```bash
-pipx install dolphin-convert-actions
+pipx install dolphin-context-actions
 ```
 
 ### From source with pipx
 
 ```bash
-git clone https://github.com/brunner56/dolphin-convert-actions.git
-cd dolphin-convert-actions
+git clone https://github.com/bodencrouch/dolphin-context-actions.git
+cd dolphin-context-actions
 pipx install .
 ```
 
@@ -47,19 +47,19 @@ pipx install .
 Using [uv](https://docs.astral.sh/uv/):
 
 ```bash
-uvx dolphin-convert-actions
+uvx dolphin-context-actions
 ```
 
 Or install permanently:
 
 ```bash
-uv tool install dolphin-convert-actions
+uv tool install dolphin-context-actions
 ```
 
 ## pip (user install)
 
 ```bash
-pip install --user dolphin-convert-actions
+pip install --user dolphin-context-actions
 ```
 
 Ensure `~/.local/bin` is in your `PATH`.
@@ -67,8 +67,8 @@ Ensure `~/.local/bin` is in your `PATH`.
 ## From source (make)
 
 ```bash
-git clone https://github.com/brunner56/dolphin-convert-actions.git
-cd dolphin-convert-actions
+git clone https://github.com/bodencrouch/dolphin-context-actions.git
+cd dolphin-context-actions
 make install
 ```
 
@@ -90,7 +90,7 @@ dpkg-buildpackage -us -uc
 Install:
 
 ```bash
-sudo apt install ../dolphin-convert-actions_1.0.0-1_all.deb
+sudo apt install ../dolphin-context-actions_0.1.0-1_all.deb
 ```
 
 ## Fedora / openSUSE (.rpm)
@@ -99,13 +99,13 @@ Build the package:
 
 ```bash
 sudo dnf install rpm-build python3-devel python3-setuptools
-rpmbuild -ba packaging/rpm/dolphin-convert-actions.spec
+rpmbuild -ba packaging/rpm/dolphin-context-actions.spec
 ```
 
 Install:
 
 ```bash
-sudo rpm -i ~/rpmbuild/RPMS/noarch/dolphin-convert-actions-1.0.0-1.noarch.rpm
+sudo rpm -i ~/rpmbuild/RPMS/noarch/dolphin-context-actions-0.1.0-1.noarch.rpm
 ```
 
 ## Arch Linux (PKGBUILD)
@@ -118,28 +118,28 @@ makepkg -si
 Or use an AUR helper:
 
 ```bash
-yay -S dolphin-convert-actions
+yay -S dolphin-context-actions
 ```
 
 ## Snap
 
 ```bash
-snap install dolphin-convert-actions
+snap install dolphin-context-actions
 ```
 
 ## Flatpak
 
 ```bash
-flatpak install flathub io.github.brunner56.dolphin-convert-actions
+flatpak install flathub io.github.bodencrouch.dolphin-context-actions
 ```
 
 ## AppImage
 
-Download the latest AppImage from the [Releases page](https://github.com/brunner56/dolphin-convert-actions/releases).
+Download the latest AppImage from the [Releases page](https://github.com/bodencrouch/dolphin-context-actions/releases).
 
 ```bash
-chmod +x dolphin-convert-actions-*.AppImage
-./dolphin-convert-actions-*.AppImage
+chmod +x dolphin-context-actions-*.AppImage
+./dolphin-context-actions-*.AppImage
 ```
 
 ## Requirements
@@ -191,7 +191,7 @@ On Fedora, that path is `/usr/lib64/qt6/plugins/kf6/kfileitemaction/`.
 To see which files are installed:
 
 ```bash
-ls -la ~/.local/share/kio/servicemenus/dolphin-convert-actions*
+ls -la ~/.local/share/kio/servicemenus/dolphin-context-actions*
 ```
 
 ## Troubleshooting
@@ -201,8 +201,8 @@ ls -la ~/.local/share/kio/servicemenus/dolphin-convert-actions*
 1. Restart Dolphin: `killall dolphin`
 2. Check the service menu files are installed (see above)
 3. Check `dolphinlinkfileitemaction.so` is in Qt's plugin directory
-4. Verify the binary is in PATH: `which dolphin-convert-actions`
-5. Test the CLI directly: `dolphin-convert-actions --help`
+4. Verify the binary is in PATH: `which dolphin-context-actions`
+5. Test the CLI directly: `dolphin-context-actions --help`
 6. Check Dolphin's service menu directory config under
    **Configure Dolphin → Context Menu → Download New Services…**
 

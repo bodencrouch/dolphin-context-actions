@@ -1,10 +1,10 @@
-id: io.github.brunner56.dolphin-convert-actions
+id: io.github.bodencrouch.dolphin-context-actions
 runtime: org.kde.Platform
 runtime-version: "6.8"
 sdk: org.kde.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.python3
-command: dolphin-convert-actions
+command: dolphin-context-actions
 
 finish-args:
   - --share=ipc
@@ -27,15 +27,15 @@ modules:
         only-arches:
           - x86_64
 
-  - name: dolphin-convert-actions
+  - name: dolphin-context-actions
     buildsystem: simple
     build-commands:
       - pip3 install --prefix=/app .
-      - install -Dm644 servicemenus/dolphin-convert-actions.desktop
-        /app/share/kio/servicemenus/dolphin-convert-actions.desktop
+      - install -Dm644 servicemenus/dolphin-context-actions.desktop
+        /app/share/kio/servicemenus/dolphin-context-actions.desktop
       - install -Dm644 servicemenus/dolphin-audio-converter.desktop
         /app/share/kio/servicemenus/dolphin-audio-converter.desktop
     sources:
       - type: git
-        url: https://github.com/brunner56/dolphin-convert-actions.git
+        url: https://github.com/bodencrouch/dolphin-context-actions.git
         tag: v1.0.0
