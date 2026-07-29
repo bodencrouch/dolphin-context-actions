@@ -200,6 +200,11 @@ def handle_pick_link_source(files: list[str]):
     """Handle picking files/folders as link source."""
     link_ops.pick_link_source(files)
 
+    if not link_ops.has_picked_sources():
+        return
+
+    show_link_menu(files)
+
 
 def handle_cancel_link_creation():
     """Handle cancelling link creation."""

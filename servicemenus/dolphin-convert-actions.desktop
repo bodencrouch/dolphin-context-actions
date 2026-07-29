@@ -9,7 +9,7 @@ Icon=document-convert
 [Desktop Action smartMenu]
 Name=Show Actions…
 Icon=document-convert
-Exec="/home/brunner56/.local/bin/dolphin-convert-actions" --smart-menu %F
+Exec=dolphin-convert-actions --smart-menu %F
 
 [Desktop Action separator]
 Name=
@@ -17,4 +17,4 @@ Name=
 [Desktop Action configure]
 Name=Configure…
 Icon=configure
-Exec="/home/brunner56/.local/bin/dolphin-convert-actions" --configure
+Exec=dolphin-convert-actions --configure
