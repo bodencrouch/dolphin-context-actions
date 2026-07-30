@@ -41,7 +41,7 @@ class LinkWorkflowTest(unittest.TestCase):
         self.ui_mocks[3].assert_not_called()
         self.assertTrue(link_ops.drop_hardlink(str(hardlink_dir)))
         self.assertEqual(source.stat().st_ino, (hardlink_dir / source.name).stat().st_ino)
-        self.assertFalse(link_ops.has_picked_sources())
+        self.assertFalse(link_ops.source_manager.has_sources())
 
         cli.handle_pick_link_source([str(source)])
         self.assertTrue(link_ops.drop_symlink(str(symlink_dir)))
@@ -107,7 +107,7 @@ class LinkWorkflowTest(unittest.TestCase):
 
         self.assertTrue(link_ops.drop_as(str(target), "symlink-clone"))
         self.assertTrue((target / "source" / "file.txt").is_symlink())
-        self.assertFalse(link_ops.has_picked_sources())
+        self.assertFalse(link_ops.source_manager.has_sources())
 
 
 if __name__ == "__main__":

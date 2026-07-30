@@ -220,20 +220,28 @@ def drop_hardlink(target_dir: str, relative_to: str | None = None):
     
     for source in sources:
         source_path = Path(source)
-        
+        # is_file() follows symlinks, so a symlink source would otherwise
+        # silently hardlink to whatever it points at. The KAuth helper used
+        # for the elevated path rejects symlink sources outright (lstat +
+        # S_ISREG); match that here so the same source produces the same
+        # behavior whether or not the destination needs elevation.
+        is_real_file = source_path.is_file() and not source_path.is_symlink()
+
         # Determine destination name
         dest_name = source_path.name
         dest_path = target_path / dest_name
-        
+
         # Auto-rename if needed
-        if source_path.is_file():
+        if is_real_file:
             dest_path = _auto_rename_path(dest_path, source_path)
         else:
             dest_path = _auto_rename_dir(dest_path, source_path)
-        
+
         try:
-            if source_path.is_file():
-                os.link(source, str(dest_path))
+            if source_path.is_symlink():
+                raise OSError("Symlinks cannot be hardlinked. Use Drop Symlink.")
+            elif is_real_file:
+                os.link(source, str(dest_path), follow_symlinks=False)
                 created.append(str(dest_path))
             else:
                 raise OSError("Directories cannot be hardlinked. Use Drop Symlink.")
@@ -696,8 +704,3 @@ def drop_as(target_dir: str, drop_type: str, relative: bool = True):
     if success:
         source_manager.clear()
     return success
-
-
-def has_picked_sources() -> bool:
-    """Check if there are currently picked sources."""
-    return source_manager.has_sources()

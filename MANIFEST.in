@@ -2,4 +2,6 @@ recursive-include kio-plugin CMakeLists.txt *.cpp *.json *.actions
 include tests/link_menu_probe.cpp
 include tests/test_plugin_menu.sh
 include tests/test_plugin_helper_name.py
+include tests/test_link_workflow.py
+include tests/__init__.py
 recursive-include scripts *.py

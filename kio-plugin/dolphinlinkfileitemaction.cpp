@@ -177,6 +177,23 @@ private:
         notify(tr("Link Source Picked"), tr("Picked %1 item(s)").arg(sources.size()));
     }
 
+    // Rewrites the state file to exactly `remaining`, with none of
+    // savePickedSources' pick-specific side effects (no "Link Source Picked"
+    // notification, no existence filtering -- these are already-known-good
+    // paths from a run in progress, not a fresh user selection).
+    static void writeStateFile(const QStringList &remaining)
+    {
+        QJsonArray sources;
+        for (const QString &path : remaining) {
+            sources.append(path);
+        }
+        QSaveFile file(stateFile());
+        if (file.open(QIODevice::WriteOnly)) {
+            file.write(QJsonDocument(QJsonObject{{QStringLiteral("sources"), sources}}).toJson());
+            file.commit();
+        }
+    }
+
     static QString destinationDirectory(const QStringList &paths)
     {
         const QFileInfo first(paths.constFirst());
@@ -236,7 +253,14 @@ private:
     void runElevated(const QString &mode, const QStringList &sources, const QString &targetDir, int sourceIndex)
     {
         if (sourceIndex >= sources.size()) {
-            QFile::remove(stateFile());
+            // Only clear if the pick is still exactly what this run started
+            // with. If the user re-picked a different source set while this
+            // (polkit-prompt-gated, potentially long) run was in flight, that
+            // new pick must survive -- not be silently wiped by this run
+            // finishing.
+            if (pickedSources() == sources) {
+                QFile::remove(stateFile());
+            }
             notify(tr("Link Created"), tr("Created %1 item(s) in %2 as administrator").arg(sources.size()).arg(targetDir));
             return;
         }
@@ -294,6 +318,15 @@ private:
 
             if (job->error() == KAuth::ActionReply::UserCancelledError) {
                 return; // password dialog dismissed; the user already knows
+            }
+
+            // Narrow the pick to the failed source plus whatever wasn't
+            // attempted yet -- sources before sourceIndex already succeeded,
+            // and re-including them on retry would re-link (auto-renamed)
+            // duplicates of work already done. Matches link_ops.py's Python
+            // path, which only re-saves the sources that actually failed.
+            if (pickedSources() == sources) {
+                writeStateFile(sources.mid(sourceIndex));
             }
 
             fail(tr("Could not create %1 as administrator: %2").arg(kind.toLower(), errorText));

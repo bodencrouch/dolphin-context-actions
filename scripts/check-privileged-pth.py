@@ -78,6 +78,43 @@ def pth_target_paths(pth_file: str) -> list[str]:
     return targets
 
 
+def pth_import_lines(pth_file: str) -> list[str]:
+    """"import ..." lines an editable-install .pth executes at interpreter startup.
+
+    This is the more dangerous of the two .pth hazards this tool covers: a
+    sys.path entry only becomes code execution when something later imports a
+    shadowed module, but a "import ..." line in a .pth file runs
+    unconditionally, every time any Python process starts with that
+    site-packages directory on its search path -- root or not.
+
+    Scoped to __editable__*.pth specifically, not every .pth on the system:
+    an unconditional check across all .pth files flags real, benign system
+    packaging the first time this ran against a live machine -- setuptools'
+    own distutils-precedence.pth, namespace-package shims like
+    protobuf-*-nspkg.pth and Paste-*-nspkg.pth, abrt3.pth -- all root-owned,
+    distro-packaged, and reviewed as part of normal OS supply chain trust,
+    not something this tool should second-guess or a bare --fix should risk
+    deleting. Both incidents this tool exists to catch were `pip install -e`
+    editable installs, which is exactly the naming convention setuptools uses
+    (PEP 660) for the .pth it generates -- so that's the scope this narrower
+    check targets, and it still catches the class of hazard used in a
+    constructed test (a crafted __editable__-style .pth with an
+    "import subprocess; ..." payload).
+    """
+    if not os.path.basename(pth_file).startswith("__editable__"):
+        return []
+    lines = []
+    try:
+        with open(pth_file, "r", errors="replace") as f:
+            for line in f:
+                line = line.rstrip("\n")
+                if line.startswith("import "):
+                    lines.append(line)
+    except OSError:
+        pass
+    return lines
+
+
 def is_hazardous(path: str) -> str | None:
     """Returns a description of the hazard, or None if the path is safe."""
     if not os.path.exists(path):
@@ -108,6 +145,8 @@ def main() -> int:
 
     pth_files, unreadable = find_pth_files()
     for pth_file in pth_files:
+        for line in pth_import_lines(pth_file):
+            hazards.append((pth_file, line, "executes unconditionally at interpreter startup"))
         for target in pth_target_paths(pth_file):
             reason = is_hazardous(target)
             if reason:
