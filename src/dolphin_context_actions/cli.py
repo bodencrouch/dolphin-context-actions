@@ -68,7 +68,6 @@ def smart_menu(files: list[str]):
             ("to_mkv", "Convert to MKV"),
             ("extract_audio", "Extract Audio"),
             ("upload_imgur", "Upload to Imgur"),
-            ("separator", ""),
         ]
         for fmt in sorted(audio.AUDIO_FORMATS):
             preset = audio.AUDIO_PRESETS[fmt]
@@ -136,11 +135,14 @@ def smart_menu(files: list[str]):
 def batch_convert(files: list[str], mode: str, param: str | None = None):
     _ffmpeg_check()
 
+    # Without an explicit --format, fall back to what Configure… saved.
+    cfg = cfgmod.load()
+
     if mode == "audio":
-        fmt = param or "mp3"
+        fmt = param or cfg.get("audio_preset", "mp3")
         audio.convert_files(files, fmt)
     elif mode == "video-to-gif":
-        preset = param or "medium"
+        preset = param or cfg.get("video_preset", "medium")
         video.to_gif(files, preset)
     elif mode == "video-to-mp4":
         video.to_mp4(files, ".mp4")
@@ -196,6 +198,17 @@ def run_configure():
 
 
 # Link Shell Extension operations
+#
+# Elevation into root-owned directories is handled entirely by the KAuth
+# helper in kio-plugin/linkhelper.cpp, called directly from the C++ context
+# menu plugin -- not from this CLI. A privileged pkexec-on-a-user-script path
+# used to live here; it was replaced because pkexec performs no ownership
+# check on its target, so elevating a script under ~/.local/bin was
+# equivalent to granting root to anything that could write that file. See
+# the KAuth helper for the hardened replacement (D-Bus-activated, root-owned,
+# fd-relative link creation).
+
+
 def handle_pick_link_source(files: list[str]):
     if not files:
         return
@@ -209,9 +222,6 @@ def handle_cancel_link_creation():
 
 def handle_drop_as(target_dir: str, drop_type: str):
     """Handle Drop As operation."""
-    # target_dir is the directory where the drop occurs
-    # For KDE service menus, we need to get the target from the environment
-    # The service menu receives the target directory as the current working directory
     link_ops.drop_as(target_dir, drop_type)
 
 
@@ -285,7 +295,9 @@ def handle_enumerate_hardlinks(files: list[str]):
         ui.error_dialog("Enumerate Hardlinks", "No file selected.")
         return
     
-    siblings = link_ops.enumerate_hardlinks(files[0])
+    # enumerate_hardlinks includes the file itself; only the others are siblings.
+    resolved = str(Path(files[0]).resolve())
+    siblings = [s for s in link_ops.enumerate_hardlinks(files[0]) if s != resolved]
     if siblings:
         msg = f"Hardlink siblings of {files[0]}:\n\n" + "\n".join(siblings)
         ui.info_dialog("Hardlink Siblings", msg, width=600, height=400)
@@ -294,7 +306,9 @@ def handle_enumerate_hardlinks(files: list[str]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Dolphin Context Actions")
+    # allow_abbrev=False: "--drop" silently resolving to "--drop-symlink" is
+    # confusing from any caller, elevated or not.
+    parser = argparse.ArgumentParser(description="Dolphin Context Actions", allow_abbrev=False)
     parser.add_argument("--smart-menu", action="store_true", help="Show smart context menu")
     parser.add_argument("--batch", choices=[
         "audio", "video-to-gif", "video-to-mp4", "video-to-webm",
@@ -315,7 +329,7 @@ def main():
     parser.add_argument("--link-properties", action="store_true", help="Show link properties")
     parser.add_argument("--enumerate-hardlinks", action="store_true", help="Enumerate hardlinks")
     parser.add_argument("--target-dir", help="Target directory for drop operations")
-    
+
     parser.add_argument("files", nargs="*")
 
     args = parser.parse_args()

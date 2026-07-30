@@ -117,8 +117,50 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
 - **Smart Move** — Dolphin does not expose file moves to context-menu plugins.
 - **Reparse Points** — NTFS-specific reparse point operations are not applicable on Linux
 - **Backup Mode** — The Windows version's backup mode with elevated privileges is not implemented
+- **Flatpak / Snap / AppImage** — the context-menu plugin (and with it, all
+  Link Shell Extension features, including elevated drops) is not built or
+  packaged for these formats. A root-owned, D-Bus-activated privileged
+  helper is fundamentally incompatible with their sandboxing — there is no
+  way to install a system D-Bus service or polkit action from inside a
+  Flatpak/Snap confinement. Those formats ship the media-conversion CLI and
+  service menus only. Use the native rpm/deb/Arch package, or `install.sh`,
+  for the link features.
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
+
+### Dropping into a root-owned directory
+
+Dropping a hardlink or symlink into a directory you can't write to (`/`, `/usr`, etc.)
+prompts for the administrator password via polkit, same as Dolphin's own
+"Open as Administrator". The privileged half is a small KAuth helper
+(`kio-plugin/linkhelper.cpp`) installed root-owned to `/usr/libexec/kf6/kauth/`
+and D-Bus-activated — it is never a user-writable script pointed at by
+`pkexec`, since `pkexec` performs no ownership check on its target and would
+make that equivalent to granting root to anything that can write your
+`~/.local/bin`.
+
+Hardlink Clone / Symlink Clone / Smart Copy are **not** offered elevated —
+those recurse over an arbitrarily large, user-controlled tree, which isn't
+something a reviewable privileged helper should do. They work normally when
+the destination is writable, and fail with a plain permission error otherwise.
+
+This elevation path requires the KAuth helper to be installed to system
+directories (`install.sh` / `Makefile` / the rpm, deb, and Arch packages do
+this). It is not available under Flatpak, Snap, or AppImage — see
+[Limitations](#link-shell-extension-on-linux) below.
+
+**If you ever install this project's Python package as root** (`sudo pip
+install`, `pkexec pip install --user -e .`) — don't; it isn't needed, since
+`install.sh`/`make install` already call `sudo` only for the one step that
+requires it, and refuse to run under `sudo` themselves. If it happens anyway,
+run `scripts/check-privileged-pth.py --fix` (or `make doctor`). Editable
+installs write a `.pth` file into site-packages that adds this checkout's
+`src/` directory to `sys.path`; done as root, that `.pth` file ends up
+root-owned while still pointing at a directory your normal user can write to,
+which means anything that can write there gets code run as root the next time
+anything does `sudo python3` / `pkexec ... python3`. This isn't specific to
+this project — it's a general hazard of editable pip installs run as root,
+for any Python project.
 
 ## Project structure
 
@@ -126,7 +168,9 @@ The drop menu supports hardlinks, symlinks, clones, smart copy, link properties,
 ├── pyproject.toml              # Python package definition
 ├── Makefile                    # Build/install/uninstall
 ├── install.sh                  # Manual install script
-├── kio-plugin/                 # Stateful root context-menu plugin
+├── kio-plugin/                 # Context-menu plugin + KAuth privileged-link helper
+├── scripts/
+│   └── check-privileged-pth.py # Scan for root-owned .pth files pointing at user-writable dirs
 ├── debian/                     # Debian packaging
 ├── packaging/
 │   ├── rpm/                    # RPM spec

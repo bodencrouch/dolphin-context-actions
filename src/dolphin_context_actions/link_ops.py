@@ -83,12 +83,17 @@ class LinkSource:
         _save_picked_sources(sources)
     
     def pick(self, paths: list[str]):
-        """Pick new sources (replaces existing)."""
-        # Resolve to absolute paths
-        resolved = [str(Path(p).resolve()) for p in paths]
-        self.save(resolved)
-        return resolved
-    
+        """Pick new sources (replaces existing).
+
+        Absolute but not resolved: resolve() follows symlinks, so picking a
+        symlink stored its target instead, and the drop then created a link to
+        the target under the target's name. The KIO plugin stores the selected
+        path as-is, and these two must agree.
+        """
+        absolute = [os.path.abspath(p) for p in paths]
+        self.save(absolute)
+        return absolute
+
     def get(self) -> list[str]:
         """Get current picked sources."""
         return self.load()
@@ -115,7 +120,9 @@ def pick_link_source(paths: list[str]):
     valid_paths = []
     for p in paths:
         path = Path(p)
-        if not path.exists():
+        # A broken symlink is still a valid thing to link to, and the KIO plugin
+        # accepts it, so exists()-alone would disagree with the context menu.
+        if not path.exists() and not path.is_symlink():
             ui.error_dialog("Pick Link Source", f"Path does not exist: {p}")
             return False
         valid_paths.append(str(path))
@@ -295,8 +302,12 @@ def drop_symlink(target_dir: str, relative: bool = True):
         
         try:
             if relative:
-                # Try to create relative symlink
-                source_abs = str(source_path.resolve())
+                # Resolve the containing directory so ".." hops in the relative
+                # path are correct, but keep the leaf name unresolved so a
+                # picked symlink links to itself rather than to its target.
+                source_abs = os.path.join(
+                    os.path.realpath(source_path.parent), source_path.name
+                )
                 # Compute relative path from target to source
                 rel_path = os.path.relpath(source_abs, target_dir_abs)
                 os.symlink(rel_path, str(dest_path))
@@ -595,12 +606,14 @@ def show_hardlink_properties(path: str):
         path: Path to file
     """
     file_path = Path(path)
-    if not file_path.exists():
+    # exists() follows symlinks, so a broken link would be rejected here -- the
+    # very case where seeing the link target is most useful.
+    if not file_path.exists() and not file_path.is_symlink():
         ui.error_dialog("Link Properties", f"File does not exist: {path}")
         return
-    
+
     try:
-        file_stat = os.stat(file_path)
+        file_stat = os.lstat(file_path)
         
         # Find all siblings
         siblings = enumerate_hardlinks(path)

@@ -1,3 +1,10 @@
+# Intentionally does not build kio-plugin/ (the Dolphin context-menu plugin
+# and its KAuth privileged-link helper). That helper is a root-owned, D-Bus
+# system-activated service with a polkit action -- there is no way to install
+# a system D-Bus service or polkit action from inside Flatpak's sandbox. This
+# manifest ships the CLI + service menus only; Link Shell Extension features
+# (Pick Link Source / Drop Link As), which need the plugin, are unavailable
+# under Flatpak. Use the native rpm/deb/Arch package, or install.sh, for those.
 id: io.github.bodencrouch.dolphin-context-actions
 runtime: org.kde.Platform
 runtime-version: "6.8"
