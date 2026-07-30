@@ -1,17 +1,12 @@
-#!/usr/bin/env python3
 import argparse
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
-from . import config as cfgmod, ui
+from . import config as cfgmod
+from . import link_ops, ui, uploaders
 from .converters import audio, video
-from . import uploaders
-from . import link_ops
-
-SCRIPT = Path(__file__).resolve()
-APP_DIR = SCRIPT.parent
 
 
 def _ffmpeg_check():

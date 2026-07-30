@@ -2,14 +2,9 @@ import json
 import os
 import shutil
 import subprocess
-import tempfile
 from pathlib import Path
 
-from . import ui, config
-
-
-def is_gif(path: Path) -> bool:
-    return path.suffix.lower() in (".gif",)
+from . import config, ui
 
 
 def imgur_upload(files: list[str]):

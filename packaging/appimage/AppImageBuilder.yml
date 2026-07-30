@@ -3,8 +3,9 @@
 # user bundle with no root-owned install step, so it cannot host a root-owned
 # D-Bus system service or polkit action. This bundle ships the CLI only; Link
 # Shell Extension features (Pick Link Source / Drop Link As), which need the
-# plugin registered with Dolphin/KIO, are unavailable from an AppImage. Use the
-# native rpm/deb/Arch package, or install.sh, for those.
+# plugin registered with Dolphin/KIO, are unavailable from an AppImage. As of
+# this writing none of the rpm/deb/Arch packages build kio-plugin/ either --
+# only install.sh / make install (from a source checkout) do.
 version: 1
 AppDir:
   app_info:

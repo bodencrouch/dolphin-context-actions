@@ -3,8 +3,9 @@
 # system-activated service with a polkit action -- strict confinement has no
 # path to install a system D-Bus service or polkit action. This snap ships the
 # CLI + service menus only; Link Shell Extension features (Pick Link Source /
-# Drop Link As), which need the plugin, are unavailable under Snap. Use the
-# native rpm/deb/Arch package, or install.sh, for those.
+# Drop Link As), which need the plugin, are unavailable under Snap. As of
+# this writing none of the rpm/deb/Arch packages build kio-plugin/ either --
+# only install.sh / make install (from a source checkout) do.
 name: dolphin-context-actions
 base: core24
 version: "0.1.0"
