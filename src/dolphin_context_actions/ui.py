@@ -2,7 +2,6 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
 QDBUS = next(
     (n for n in ("qdbus-qt5", "qdbus", "qdbus6") if shutil.which(n)),

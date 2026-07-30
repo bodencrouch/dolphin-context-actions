@@ -4,7 +4,9 @@
 # a system D-Bus service or polkit action from inside Flatpak's sandbox. This
 # manifest ships the CLI + service menus only; Link Shell Extension features
 # (Pick Link Source / Drop Link As), which need the plugin, are unavailable
-# under Flatpak. Use the native rpm/deb/Arch package, or install.sh, for those.
+# under Flatpak. As of this writing none of the rpm/deb/Arch packages build
+# kio-plugin/ either -- only install.sh / make install (from a source
+# checkout) do.
 id: io.github.bodencrouch.dolphin-context-actions
 runtime: org.kde.Platform
 runtime-version: "6.8"

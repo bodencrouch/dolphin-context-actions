@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Link Shell Extension-like functionality for KDE Dolphin.
 
@@ -24,7 +23,6 @@ import json
 import os
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from . import ui
 
@@ -52,7 +50,7 @@ def _load_picked_sources() -> list[str]:
             with open(_PICKED_SOURCES_FILE, "r") as f:
                 data = json.load(f)
                 return data.get("sources", [])
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return []
 
@@ -195,7 +193,7 @@ def _auto_rename_dir(destination: Path, source: Path, kind: str = "Hardlink") ->
         counter += 1
 
 
-def drop_hardlink(target_dir: str, relative_to: Optional[str] = None):
+def drop_hardlink(target_dir: str, relative_to: str | None = None):
     """
     Drop hardlinks of picked sources into target directory.
     
@@ -651,77 +649,6 @@ def show_hardlink_properties(path: str):
         ui.info_dialog("Link Properties", msg, width=600, height=400)
     except Exception as e:
         ui.error_dialog("Link Properties", f"Error: {e}")
-
-
-def smart_move(source: str, target: str):
-    """
-    Smart move - move directory while updating inner symlinks.
-    
-    This is integrated into the file manager's move operation via
-    the service menu, but on Linux/KDE, this is harder to intercept.
-    This function provides a manual alternative.
-    """
-    source_path = Path(source)
-    target_path = Path(target)
-    
-    if not source_path.exists():
-        ui.error_dialog("Smart Move", f"Source does not exist: {source}")
-        return False
-    
-    if target_path.exists():
-        ui.error_dialog("Smart Move", f"Target already exists: {target}")
-        return False
-    
-    if not os.access(target_path.parent, os.W_OK):
-        ui.error_dialog("Smart Move", f"No write permission in: {target_path.parent}")
-        return False
-    
-    # On Linux, we can use shutil.move for the actual move
-    # But we need to update symlinks that point to moved content
-    
-    # First, find all symlinks in the source tree
-    symlinks_to_update = []
-    for root, dirs, files in os.walk(source):
-        for item in files + dirs:
-            item_path = Path(root) / item
-            if item_path.is_symlink():
-                link_target = os.readlink(item_path)
-                symlinks_to_update.append((item_path, link_target))
-    
-    # Move the source
-    try:
-        shutil.move(source, target)
-    except Exception as e:
-        ui.error_dialog("Smart Move", f"Move failed: {e}")
-        return False
-    
-    # Update symlinks
-    source_abs = str(source_path.resolve())
-    target_abs = str(target_path.resolve())
-    
-    for symlink_path, link_target in symlinks_to_update:
-        new_symlink_path = Path(target) / symlink_path.relative_to(source)
-        
-        if new_symlink_path.exists():
-            # Update the symlink target
-            if link_target.startswith("/"):
-                # Absolute path - update if it was pointing into source
-                if link_target.startswith(source_abs):
-                    new_target = link_target.replace(source_abs, target_abs, 1)
-                    try:
-                        # Remove old symlink
-                        new_symlink_path.unlink()
-                        # Create new symlink
-                        os.symlink(new_target, str(new_symlink_path))
-                    except Exception:
-                        pass
-            else:
-                # Relative path - need to recompute
-                # This is complex, skip for now
-                pass
-    
-    ui.notify("Smart Move", f"Moved {source} to {target}", "folder")
-    return True
 
 
 # Drop As menu handler

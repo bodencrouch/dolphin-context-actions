@@ -5,14 +5,22 @@
 Right-click any media file in Dolphin → **Context Actions** → **Configure…**
 to open a kdialog menu where you can set:
 
-- **Default audio format** — the target format used when converting audio
-  files from the smart menu. Options: MP3 (V0), OGG (Q6), FLAC, WAV, M4A
-  (AAC 192k), Opus (128k), ALAC.
-- **Default GIF preset** — the quality preset for video-to-GIF conversion.
-  Options: Small (10 fps, 480px), Medium (15 fps, 800px), Large (24 fps,
-  1280px), Source size (15 fps).
+- **Default audio format** — used by `dolphin-context-actions --batch audio`
+  when it's run without an explicit `--format`. Options: MP3 (V0), OGG (Q6),
+  FLAC, WAV, M4A (AAC 192k), Opus (128k), ALAC.
+- **Default GIF preset** — used by `dolphin-context-actions --batch
+  video-to-gif` when it's run without an explicit `--format`. Options: Small
+  (10 fps, 480px), Medium (15 fps, 800px), Large (24 fps, 1280px), Source
+  size (15 fps).
 - **Imgur Client ID** — your Imgur API client ID for uploads. Register an
   application at https://api.imgur.com/oauth2/addclient to get one.
+
+Every shipped `.desktop` menu entry already passes an explicit `--format`,
+so the two defaults above don't currently change what any menu item does;
+they take effect for a bare `--batch audio` / `--batch video-to-gif`
+invocation, e.g. from a terminal or a custom `.desktop` action you add
+yourself. The interactive smart menu (right-click a file → **Context
+Actions**) always shows its own format picker regardless of these defaults.
 
 ## Configuration file
 

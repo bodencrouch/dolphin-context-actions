@@ -1,7 +1,8 @@
 import re
-import tomllib
 import unittest
 from pathlib import Path
+
+import tomllib
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_SOURCE = REPO_ROOT / "kio-plugin" / "dolphinlinkfileitemaction.cpp"

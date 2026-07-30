@@ -8,14 +8,20 @@ cd dolphin-context-actions
 pip install -e .
 ```
 
+Never run `pip install -e .` (or the whole install as root/sudo/pkexec) —
+see [`scripts/check-privileged-pth.py`](../scripts/check-privileged-pth.py)
+for why; `make install`/`install.sh` already call `sudo` themselves for the
+one step that needs it and refuse to run under `sudo`.
+
 Makefile targets for development:
 
 ```bash
-make install        # Install package + service menus
+make install        # Install package + service menus + KIO plugin/KAuth helper
 make install-menus  # Install just the .desktop files
-make plugin-build   # Build the KIO link action and its probe
-make install-plugin # Install the KIO plugin under Qt's plugin directory
-make uninstall      # Remove package + service menus
+make plugin-build   # Build the KIO plugin, KAuth helper, and probe
+make install-plugin # Install the KIO plugin + KAuth helper to system paths
+make uninstall      # Remove everything install added, including the KAuth helper
+make doctor         # Scan for root-owned .pth files pointing at user-writable dirs
 ```
 
 After any change to the `.desktop` files, restart Dolphin:
@@ -25,11 +31,17 @@ killall dolphin
 ```
 
 After changing `kio-plugin/`, rebuild and reinstall it before restarting
-Dolphin:
+Dolphin — this also re-installs the KAuth helper, so a plugin change and a
+helper change are the same step:
 
 ```bash
 make install-plugin
 ```
+
+Reinstalling only replaces the files on disk; any Dolphin process already
+running keeps the previously-loaded plugin in memory (a new `.so` on disk
+doesn't get picked up by an existing process). `killall dolphin` after
+`make install-plugin`, not just after `.desktop` changes.
 
 ## Project layout
 
@@ -40,10 +52,21 @@ src/dolphin_context_actions/
 ├── cli.py                   # CLI parser + smart menu dispatch
 ├── config.py                # JSON config read/write
 ├── ui.py                    # kdialog/qdbus progress bar helpers
-├── converters/
-│   ├── audio.py             # Audio transcoding (7 formats)
-│   └── video.py             # GIF/MP4/WebM/MKV + audio extraction
-└── uploaders.py             # Imgur upload
+├── link_ops.py              # Link Shell Extension operations (hardlink/symlink/clone/copy)
+├── uploaders.py             # Imgur upload
+└── converters/
+    ├── __init__.py          # unique_output() -- auto-rename on collision
+    ├── ffmpeg_tools.py      # Resolves an ffmpeg binary against actual encoder support
+    ├── audio.py             # Audio transcoding (7 formats)
+    └── video.py             # GIF/MP4/WebM/MKV + audio extraction
+
+kio-plugin/
+├── dolphinlinkfileitemaction.cpp        # Context-menu plugin (KAbstractFileItemActionPlugin)
+├── linkhelper.cpp                       # KAuth privileged helper (root-owned, D-Bus-activated)
+└── io.github.bodencrouch.linkhelper.actions  # KAuth/polkit action policy
+
+scripts/
+└── check-privileged-pth.py  # `make doctor` -- detects the pip-install-as-root hazard
 ```
 
 ## Adding a new audio format
@@ -66,8 +89,8 @@ When `--smart-menu` is called:
 ## Releasing
 
 ```bash
-# Tag the release
-git tag v1.0.0
+# Tag the release (versioning restarted at 0.1.0 -- see CHANGELOG.md)
+git tag v0.1.0
 git push --tags
 
 # Build all package formats

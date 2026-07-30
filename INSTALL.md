@@ -7,7 +7,6 @@
 | pipx | `pipx install dolphin-context-actions` |
 | uvx | `uvx dolphin-context-actions` |
 | pip (user) | `pip install --user dolphin-context-actions` |
-| pip (system) | `sudo pip install dolphin-context-actions` |
 | From source | `make install` |
 | Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
 | Fedora | `sudo dnf install dolphin-context-actions-0.1.0-1.noarch.rpm` |
@@ -72,11 +71,20 @@ cd dolphin-context-actions
 make install
 ```
 
-This installs the Python package and media service menus. It also builds the
-KIO plugin that provides the root link actions. The plugin install uses `sudo`.
+This installs the Python package and media service menus. It also builds
+`kio-plugin/` — the context-menu plugin and its KAuth privileged-link
+helper — and installs both to system paths. Only the final `cmake
+--install` step uses `sudo`; `make install` refuses to run under `sudo`
+itself (see [`scripts/check-privileged-pth.py`](scripts/check-privileged-pth.py)
+for why).
 
-The packaged Python-only methods do not install the KIO plugin. Use the source
-install when you want **Pick Link Source** at the context-menu root.
+Every other method in the table above — pipx, uvx, pip, Debian/Ubuntu,
+Fedora, openSUSE, Arch, Snap, Flatpak, AppImage — packages the Python CLI
+and service menus only. None of them currently build `kio-plugin/`, so
+**Pick Link Source** / **Drop Link As** (the whole Link Shell Extension
+feature set, not just the elevated case) are unavailable from any of those.
+`make install` / `install.sh`, run from a source checkout, is the only path
+that provides them today.
 
 ## Debian / Ubuntu (.deb)
 

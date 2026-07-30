@@ -4,15 +4,27 @@ dolphin-context-actions \- Media conversion and file-linking actions for Dolphin
 .SH SYNOPSIS
 .B dolphin-context-actions
 [\fI\,--smart-menu\/\fR] [\fI\,--batch MODE\/\fR] [\fI\,--format FMT\/\fR]
-[\fI\,--configure\/\fR] [\fI\,files...\/\fR]
+[\fI\,--configure\/\fR]
+[\fI\,--pick-link-source\/\fR] [\fI\,--cancel-link\/\fR]
+[\fI\,--drop-hardlink\/\fR | \fI\,--drop-symlink\/\fR | \fI\,--drop-as TYPE\/\fR]
+[\fI\,--target-dir DIR\/\fR]
+[\fI\,--hardlink-clone\/\fR | \fI\,--symlink-clone\/\fR | \fI\,--smart-copy\/\fR]
+[\fI\,--link-properties\/\fR] [\fI\,--enumerate-hardlinks\/\fR]
+[\fI\,files...\/\fR]
 .SH DESCRIPTION
 \fBdolphin-context-actions\fR is the backend for Dolphin (KDE file manager)
-service menus that add intelligent, context-aware media conversion actions
-to the right-click menu.
+service menus and the \fBkio-plugin\fR context-menu plugin. It provides two
+independent feature sets: intelligent, context-aware media conversion, and
+Link Shell Extension-style hardlink/symlink operations.
 .PP
-It detects the MIME type of the selected file and presents only relevant
-conversion options via kdialog dialogs, then runs the chosen conversion
-using ffmpeg with real-time progress tracking.
+For media conversion, it detects the MIME type of the selected file and
+presents only relevant conversion options via kdialog dialogs, then runs
+the chosen conversion using ffmpeg with real-time progress tracking.
+.PP
+For link operations, it is invoked directly by the \fBkio-plugin\fR context
+menu (not through a service menu); dropping into a directory you cannot
+write to is handled by a separate, root-owned KAuth helper, not by this
+command running elevated. See \fBLINK OPERATIONS\fR below.
 .SH OPTIONS
 .TP
 \fB\-\-smart-menu\fR
@@ -50,9 +62,67 @@ opus, alac.
 Open the configuration dialog to set defaults (audio format, GIF preset,
 Imgur Client ID).
 .TP
+\fB\-\-pick-link-source\fR
+Store \fBfiles\fR as the link source for a subsequent drop operation.
+.TP
+\fB\-\-cancel-link\fR
+Clear the picked link source without dropping it.
+.TP
+\fB\-\-drop-hardlink\fR
+Create hardlinks of the picked source(s) in \fB\-\-target-dir\fR. Files only.
+.TP
+\fB\-\-drop-symlink\fR
+Create symlinks of the picked source(s) in \fB\-\-target-dir\fR.
+.TP
+\fB\-\-drop-as\fR \fI\,TYPE\/\fR
+Drop the picked source as \fBhardlink\fR, \fBsymlink\fR, \fBhardlink\-clone\fR,
+\fBsymlink\-clone\fR, or \fBsmart\-copy\fR into \fB\-\-target-dir\fR.
+.TP
+\fB\-\-target-dir\fR \fI\,DIR\/\fR
+Destination directory for a drop operation.
+.TP
+\fB\-\-hardlink-clone\fR
+Clone a picked source directory, hardlinking regular files and recreating
+the directory/symlink structure. Requires exactly one picked directory;
+prompts interactively for the destination.
+.TP
+\fB\-\-symlink-clone\fR
+Same as \fB\-\-hardlink-clone\fR but symlinks files instead of hardlinking them.
+.TP
+\fB\-\-smart-copy\fR
+Copy a picked file or directory, preserving internal hardlink and symlink
+structure (an internal hardlink stays a hardlink in the copy, not two
+independent files). Requires exactly one picked source; prompts
+interactively for the destination.
+.TP
+\fB\-\-link-properties\fR
+Show reference count, inode, device, and hardlink sibling paths for \fBfiles\fR
+(exactly one file).
+.TP
+\fB\-\-enumerate-hardlinks\fR
+List all hardlink siblings of \fBfiles\fR (exactly one file) found under its
+parent directory.
+.TP
 \fBfiles\fR
 One or more file paths to process. Supports %F and %f from Dolphin service
 menu substitution.
+.SH LINK OPERATIONS
+The link flags implement a stateful, Windows Link Shell Extension-style
+workflow, driven by the \fBkio-plugin\fR context-menu plugin rather than a
+\&.desktop service menu: pick a source, then drop it elsewhere.
+.PP
+Picked sources are stored in
+\fI~/.cache/dolphin-link-extension/picked_sources.json\fR and persist between
+invocations. A failed drop keeps the source picked so the operation can be
+retried; a successful drop (or \fB\-\-cancel-link\fR) clears it.
+.PP
+Dropping into a directory this command cannot write to does \fBnot\fR retry
+with elevated privileges from within this process. The \fBkio-plugin\fR
+context-menu plugin instead calls a separate, root-owned KAuth helper
+(\fIkio-plugin/linkhelper.cpp\fR) directly for a single hardlink or symlink
+drop, prompting for the administrator password via polkit. Hardlink Clone,
+Symlink Clone, and Smart Copy are never offered elevated, since they recurse
+over an arbitrarily large, user-controlled tree.
 .SH EXIT STATUS
 .IP 0
 All conversions completed successfully.
@@ -63,6 +133,10 @@ One or more errors occurred or the operation was cancelled.
 \fI~/.config/dolphin-context-actions/config.json\fR
 User configuration file. Stores default audio format, GIF preset, and
 Imgur Client ID.
+.TP
+\fI~/.cache/dolphin-link-extension/picked_sources.json\fR
+Currently picked link source(s), written by \fB\-\-pick-link-source\fR and
+read by every drop operation.
 .TP
 \fI~/.local/share/kio/servicemenus/dolphin-context-actions.desktop\fR
 Service menu definition for the smart menu.
@@ -85,6 +159,14 @@ dolphin-context-actions \-\-batch imgur\-upload screenshot.png
 .TP
 Open configuration:
 dolphin-context-actions \-\-configure
+.TP
+Pick a folder as a link source, then drop a symlink to it elsewhere:
+dolphin-context-actions \-\-pick\-link\-source ~/Projects/foo
+.br
+dolphin-context-actions \-\-drop\-symlink \-\-target\-dir ~/Desktop
+.TP
+Show link properties for a file:
+dolphin-context-actions \-\-link\-properties ~/Projects/foo/bar.txt
 .SH DEPENDENCIES
 .TP
 Python 3.10+
