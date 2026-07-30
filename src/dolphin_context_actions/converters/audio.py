@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from .. import ui
+from . import ffmpeg_tools, unique_output
 
 AUDIO_PRESETS = {
     "mp3": {
@@ -100,6 +101,14 @@ def convert_files(files: list[str], target_format: str):
         ui.error_dialog("Audio Converter", f"Unknown format: {target_format}")
         return
 
+    ffmpeg_bin = ffmpeg_tools.resolve(preset["codec"])
+    if not ffmpeg_bin:
+        ui.error_dialog(
+            "Audio Converter",
+            ffmpeg_tools.missing_encoder_message(preset["name"], preset["codec"]),
+        )
+        return
+
     total = len(files)
     errors = []
     done = 0
@@ -117,6 +126,7 @@ def convert_files(files: list[str], target_format: str):
         output_path = input_path.with_suffix(preset["ext"])
         if output_path == input_path:
             output_path = input_path.with_stem(input_path.stem + "_converted").with_suffix(preset["ext"])
+        output_path = unique_output(output_path)
 
         short = input_path.name[:50]
         label = f"[{idx + 1}/{total}] {short}"
@@ -130,7 +140,7 @@ def convert_files(files: list[str], target_format: str):
         os.close(prog_fd)
 
         cmd = [
-            "ffmpeg", "-y",
+            ffmpeg_bin, "-y",
             "-i", filepath,
             "-c:a", preset["codec"],
             *preset["opts"],

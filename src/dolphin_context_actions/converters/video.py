@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from .. import ui
+from . import ffmpeg_tools, unique_output
 
 GIF_PRESETS = {
     "small": (10, 480),
@@ -43,7 +44,16 @@ def video_filters(fps: int, width: int) -> str:
 
 
 def to_gif(files: list[str], preset: str):
+    if preset not in GIF_PRESETS:
+        ui.error_dialog("Video → GIF", f"Unknown GIF preset: {preset}")
+        return
     fps, width = GIF_PRESETS[preset]
+
+    ffmpeg_bin = ffmpeg_tools.resolve("gif")
+    if not ffmpeg_bin:
+        ui.error_dialog("Video → GIF", ffmpeg_tools.missing_encoder_message("GIF", "gif"))
+        return
+
     total = len(files)
     errors = []
     done = 0
@@ -61,6 +71,7 @@ def to_gif(files: list[str], preset: str):
         output_path = input_path.with_suffix(".gif")
         if output_path == input_path:
             output_path = input_path.with_stem(input_path.stem + "_gif").with_suffix(".gif")
+        output_path = unique_output(output_path)
 
         short = input_path.name[:50]
         label = f"[{idx + 1}/{total}] {short}"
@@ -76,7 +87,7 @@ def to_gif(files: list[str], preset: str):
 
         vf_base = video_filters(fps, width)
         vf_pal = f"{vf_base},palettegen=stats_mode=diff"
-        pal_cmd = ["ffmpeg", "-y", "-i", filepath, "-vf", vf_pal, "-loglevel", "error", palette_path]
+        pal_cmd = [ffmpeg_bin, "-y", "-i", filepath, "-vf", vf_pal, "-loglevel", "error", palette_path]
         pal_proc = subprocess.run(pal_cmd, capture_output=True)
         if pal_proc.returncode != 0:
             errors.append(f"{input_path.name} (palette):\n{pal_proc.stderr.decode(errors='replace')[:400]}")
@@ -94,7 +105,7 @@ def to_gif(files: list[str], preset: str):
         os.close(prog_fd)
 
         lavfi = f"{vf_base}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3"
-        cmd = ["ffmpeg", "-y", "-i", filepath, "-i", palette_path,
+        cmd = [ffmpeg_bin, "-y", "-i", filepath, "-i", palette_path,
                "-lavfi", lavfi, "-progress", prog_path, "-nostats", "-loglevel", "error",
                str(output_path)]
 
@@ -160,6 +171,16 @@ def to_mp4(files: list[str], target_ext: str = ".mp4"):
 
 
 def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix: str):
+    ffmpeg_bin = ffmpeg_tools.resolve(params["codec_v"], params["codec_a"])
+    if not ffmpeg_bin:
+        ui.error_dialog(
+            f"Video{label_suffix}",
+            ffmpeg_tools.missing_encoder_message(
+                target_ext.upper()[1:], params["codec_v"], params["codec_a"]
+            ),
+        )
+        return
+
     total = len(files)
     errors = []
     done = 0
@@ -174,6 +195,7 @@ def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix:
         output_path = input_path.with_suffix(target_ext)
         if output_path == input_path:
             output_path = input_path.with_stem(input_path.stem + "_converted").with_suffix(target_ext)
+        output_path = unique_output(output_path)
 
         short = input_path.name[:50]
         label = f"[{idx + 1}/{total}] {short}"
@@ -186,7 +208,7 @@ def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix:
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_tr_", suffix=".txt")
         os.close(prog_fd)
 
-        cmd = ["ffmpeg", "-y", "-i", filepath,
+        cmd = [ffmpeg_bin, "-y", "-i", filepath,
                "-c:v", params["codec_v"],
                "-c:a", params["codec_a"],
                *params["opts"],
@@ -246,6 +268,11 @@ def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix:
 
 
 def extract_audio(files: list[str]):
+    ffmpeg_bin = ffmpeg_tools.resolve("libmp3lame")
+    if not ffmpeg_bin:
+        ui.error_dialog("Extract Audio", ffmpeg_tools.missing_encoder_message("MP3", "libmp3lame"))
+        return
+
     total = len(files)
     errors = []
     done = 0
@@ -260,6 +287,7 @@ def extract_audio(files: list[str]):
         output_path = input_path.with_suffix(".mp3")
         if output_path == input_path:
             output_path = input_path.with_stem(input_path.stem + "_audio").with_suffix(".mp3")
+        output_path = unique_output(output_path)
 
         short = input_path.name[:50]
         label = f"[{idx + 1}/{total}] {short}"
@@ -272,7 +300,7 @@ def extract_audio(files: list[str]):
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_ext_", suffix=".txt")
         os.close(prog_fd)
 
-        cmd = ["ffmpeg", "-y", "-i", filepath,
+        cmd = [ffmpeg_bin, "-y", "-i", filepath,
                "-vn", "-c:a", "libmp3lame", "-aq", "2",
                "-progress", prog_path, "-nostats", "-loglevel", "error",
                str(output_path)]
