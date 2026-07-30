@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 from .. import ui
-from . import ffmpeg_tools, unique_output
+from . import ffmpeg_tools, get_duration, unique_output
 
 GIF_PRESETS = {
     "small": (10, 480),
@@ -21,18 +21,6 @@ GIF_PRESET_NAMES = {
     "large": "Large (24 fps, 1280px)",
     "source": "Source size (15 fps)",
 }
-
-
-def get_duration(filepath: str) -> float | None:
-    try:
-        r = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", filepath],
-            capture_output=True, text=True, timeout=30,
-        )
-        return float(r.stdout.strip())
-    except Exception:
-        return None
 
 
 def video_filters(fps: int, width: int) -> str:
@@ -102,18 +90,26 @@ def to_gif(files: list[str], preset: str):
 
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_vid_", suffix=".txt")
         os.close(prog_fd)
+        err_fd, err_path = tempfile.mkstemp(prefix="dca_vid_err_", suffix=".txt")
 
         lavfi = f"{vf_base}[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=3"
         cmd = [ffmpeg_bin, "-y", "-i", filepath, "-i", palette_path,
                "-lavfi", lavfi, "-progress", prog_path, "-nostats", "-loglevel", "error",
-               str(output_path)]
+               "--", str(output_path)]
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        # stderr to a file, not PIPE: nothing drains a PIPE here, so a full OS
+        # pipe buffer would deadlock ffmpeg (the same hang class already hit
+        # once with notify-send).
+        with os.fdopen(err_fd, "wb") as err_file:
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err_file)
         cancelled = False
         last_pct = palette_end
 
         while proc.poll() is None:
             time.sleep(0.5)
+            # Recomputed every iteration so the cancel check below always
+            # runs, even when ffmpeg hasn't written new progress.
+            overall = last_pct
             try:
                 with open(prog_path) as pf:
                     prog = pf.read()
@@ -122,32 +118,36 @@ def to_gif(files: list[str], preset: str):
                     us = int(matches[-1])
                     file_pct = min(1.0, us / 1e6 / duration)
                     overall = palette_end + int(file_pct * (slice_end - palette_end))
-                    if overall > last_pct:
-                        last_pct = overall
-                        alive = ui.pbar_set(handle, overall, f"Converting: {label}")
-                        if not alive:
-                            proc.kill()
-                            cancelled = True
-                            break
             except Exception:
                 pass
+            if overall > last_pct:
+                last_pct = overall
+            alive = ui.pbar_set(handle, last_pct, f"Converting: {label}")
+            if not alive:
+                proc.kill()
+                cancelled = True
+                break
 
         proc.wait()
         _cleanup(prog_path, palette_path)
 
         if cancelled:
-            _cleanup(output_path)
+            _cleanup(output_path, err_path)
             ui.pbar_close(handle)
             ui.notify("Video → GIF - Cancelled", f"Cancelled on file {idx + 1}", "dialog-cancel")
             return
 
         if proc.returncode != 0:
-            stderr = proc.stderr.read() if proc.stderr else b""
+            try:
+                stderr = Path(err_path).read_bytes()
+            except Exception:
+                stderr = b""
             errors.append(f"{input_path.name}:\n{stderr.decode(errors='replace')[:400]}")
             _cleanup(output_path)
         else:
             done += 1
             ui.pbar_set(handle, slice_end, f"Done: {label}")
+        _cleanup(err_path)
 
     ui.pbar_close(handle)
 
@@ -206,20 +206,27 @@ def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix:
 
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_tr_", suffix=".txt")
         os.close(prog_fd)
+        err_fd, err_path = tempfile.mkstemp(prefix="dca_tr_err_", suffix=".txt")
 
         cmd = [ffmpeg_bin, "-y", "-i", filepath,
                "-c:v", params["codec_v"],
                "-c:a", params["codec_a"],
                *params["opts"],
                "-progress", prog_path, "-nostats", "-loglevel", "error",
-               str(output_path)]
+               "--", str(output_path)]
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        # stderr to a file, not PIPE: nothing drains a PIPE here, so a full OS
+        # pipe buffer would deadlock ffmpeg.
+        with os.fdopen(err_fd, "wb") as err_file:
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err_file)
         cancelled = False
         last_pct = slice_start
 
         while proc.poll() is None:
             time.sleep(0.5)
+            # Recomputed every iteration so the cancel check below always
+            # runs, even when ffmpeg hasn't written new progress.
+            overall = last_pct
             try:
                 with open(prog_path) as pf:
                     prog = pf.read()
@@ -228,32 +235,36 @@ def _transcode_to(files: list[str], target_ext: str, params: dict, label_suffix:
                     us = int(matches[-1])
                     pct = min(1.0, us / 1e6 / duration)
                     overall = slice_start + int(pct * (slice_end - slice_start))
-                    if overall > last_pct:
-                        last_pct = overall
-                        alive = ui.pbar_set(handle, overall, f"Converting: {label}")
-                        if not alive:
-                            proc.kill()
-                            cancelled = True
-                            break
             except Exception:
                 pass
+            if overall > last_pct:
+                last_pct = overall
+            alive = ui.pbar_set(handle, last_pct, f"Converting: {label}")
+            if not alive:
+                proc.kill()
+                cancelled = True
+                break
 
         proc.wait()
         _cleanup(prog_path)
 
         if cancelled:
-            _cleanup(output_path)
+            _cleanup(output_path, err_path)
             ui.pbar_close(handle)
             ui.notify(f"Video{label_suffix} - Cancelled", f"Cancelled on file {idx + 1}", "dialog-cancel")
             return
 
         if proc.returncode != 0:
-            stderr = proc.stderr.read() if proc.stderr else b""
+            try:
+                stderr = Path(err_path).read_bytes()
+            except Exception:
+                stderr = b""
             errors.append(f"{input_path.name}:\n{stderr.decode(errors='replace')[:400]}")
             _cleanup(output_path)
         else:
             done += 1
             ui.pbar_set(handle, slice_end, f"Done: {label}")
+        _cleanup(err_path)
 
     ui.pbar_close(handle)
 
@@ -298,18 +309,25 @@ def extract_audio(files: list[str]):
 
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_ext_", suffix=".txt")
         os.close(prog_fd)
+        err_fd, err_path = tempfile.mkstemp(prefix="dca_ext_err_", suffix=".txt")
 
         cmd = [ffmpeg_bin, "-y", "-i", filepath,
                "-vn", "-c:a", "libmp3lame", "-aq", "2",
                "-progress", prog_path, "-nostats", "-loglevel", "error",
-               str(output_path)]
+               "--", str(output_path)]
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        # stderr to a file, not PIPE: nothing drains a PIPE here, so a full OS
+        # pipe buffer would deadlock ffmpeg.
+        with os.fdopen(err_fd, "wb") as err_file:
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err_file)
         cancelled = False
         last_pct = slice_start
 
         while proc.poll() is None:
             time.sleep(0.5)
+            # Recomputed every iteration so the cancel check below always
+            # runs, even when ffmpeg hasn't written new progress.
+            overall = last_pct
             try:
                 with open(prog_path) as pf:
                     prog = pf.read()
@@ -318,32 +336,36 @@ def extract_audio(files: list[str]):
                     us = int(matches[-1])
                     pct = min(1.0, us / 1e6 / duration)
                     overall = slice_start + int(pct * (slice_end - slice_start))
-                    if overall > last_pct:
-                        last_pct = overall
-                        alive = ui.pbar_set(handle, overall, f"Extracting: {label}")
-                        if not alive:
-                            proc.kill()
-                            cancelled = True
-                            break
             except Exception:
                 pass
+            if overall > last_pct:
+                last_pct = overall
+            alive = ui.pbar_set(handle, last_pct, f"Extracting: {label}")
+            if not alive:
+                proc.kill()
+                cancelled = True
+                break
 
         proc.wait()
         _cleanup(prog_path)
 
         if cancelled:
-            _cleanup(output_path)
+            _cleanup(output_path, err_path)
             ui.pbar_close(handle)
             ui.notify("Extract Audio - Cancelled", f"Cancelled on file {idx + 1}", "dialog-cancel")
             return
 
         if proc.returncode != 0:
-            stderr = proc.stderr.read() if proc.stderr else b""
+            try:
+                stderr = Path(err_path).read_bytes()
+            except Exception:
+                stderr = b""
             errors.append(f"{input_path.name}:\n{stderr.decode(errors='replace')[:400]}")
             _cleanup(output_path)
         else:
             done += 1
             ui.pbar_set(handle, slice_end, f"Done: {label}")
+        _cleanup(err_path)
 
     ui.pbar_close(handle)
 

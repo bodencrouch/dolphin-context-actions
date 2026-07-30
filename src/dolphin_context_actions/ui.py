@@ -84,20 +84,36 @@ def pbar_set(handle: tuple | None, value: int, label: str | None = None) -> bool
     if not handle or not QDBUS:
         return True
     service, path = handle
-    r = subprocess.run(
-        [QDBUS, service, path, "Set", "", "value", str(value)],
-        capture_output=True,
-    )
+    # This runs every ~0.5s from the ffmpeg progress-polling loop, so a qdbus
+    # call that hangs (unresponsive D-Bus daemon) would otherwise stall that
+    # loop indefinitely. Treat a timeout as "can't reach the progress UI right
+    # now", not "user clicked cancel" -- return True (keep converting) rather
+    # than aborting a healthy conversion over an unrelated D-Bus hiccup.
+    try:
+        r = subprocess.run(
+            [QDBUS, service, path, "Set", "", "value", str(value)],
+            capture_output=True,
+            timeout=5,
+        )
+    except subprocess.TimeoutExpired:
+        return True
     if r.returncode != 0:
         return False
     if label is not None:
-        subprocess.run(
-            [QDBUS, service, path, "setLabelText", label],
-            capture_output=True,
-        )
+        try:
+            subprocess.run(
+                [QDBUS, service, path, "setLabelText", label],
+                capture_output=True,
+                timeout=5,
+            )
+        except subprocess.TimeoutExpired:
+            pass
     return True
 
 
 def pbar_close(handle: tuple | None):
     if handle and QDBUS:
-        subprocess.run([QDBUS, handle[0], handle[1], "close"], capture_output=True)
+        try:
+            subprocess.run([QDBUS, handle[0], handle[1], "close"], capture_output=True, timeout=5)
+        except subprocess.TimeoutExpired:
+            pass

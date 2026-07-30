@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 
 from .. import ui
-from . import ffmpeg_tools, unique_output
+from . import ffmpeg_tools, get_duration, unique_output
 
 AUDIO_PRESETS = {
     "mp3": {
@@ -63,18 +63,6 @@ AUDIO_PRESETS = {
 AUDIO_FORMATS = sorted(AUDIO_PRESETS.keys())
 
 
-def get_duration(filepath: str) -> float | None:
-    try:
-        r = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
-             "-of", "default=noprint_wrappers=1:nokey=1", filepath],
-            capture_output=True, text=True, timeout=30,
-        )
-        return float(r.stdout.strip())
-    except Exception:
-        return None
-
-
 def convert_files(files: list[str], target_format: str):
     preset = AUDIO_PRESETS.get(target_format)
     if not preset:
@@ -118,6 +106,7 @@ def convert_files(files: list[str], target_format: str):
         duration = get_duration(filepath)
         prog_fd, prog_path = tempfile.mkstemp(prefix="dca_aud_", suffix=".txt")
         os.close(prog_fd)
+        err_fd, err_path = tempfile.mkstemp(prefix="dca_aud_err_", suffix=".txt")
 
         cmd = [
             ffmpeg_bin, "-y",
@@ -127,15 +116,26 @@ def convert_files(files: list[str], target_format: str):
             "-progress", prog_path,
             "-nostats",
             "-loglevel", "error",
+            "--",
             str(output_path),
         ]
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        # stderr goes to a file, not PIPE: a PIPE nobody drains while the loop
+        # only reads stdout/progress deadlocks ffmpeg once its stderr fills the
+        # OS pipe buffer (the same hang class already hit once with notify-send).
+        with os.fdopen(err_fd, "wb") as err_file:
+            proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=err_file)
         cancelled = False
         last_pct = slice_start
 
         while proc.poll() is None:
             time.sleep(0.5)
+            # Recomputed every iteration so the cancel check below always runs,
+            # even when ffmpeg hasn't written new progress (duration probe
+            # failed, or the file briefly has no matching lines) -- previously
+            # nested inside the "got new progress" branch, so cancel could
+            # never be noticed if progress parsing never succeeded.
+            overall = last_pct
             try:
                 with open(prog_path) as pf:
                     prog = pf.read()
@@ -144,15 +144,15 @@ def convert_files(files: list[str], target_format: str):
                     us = int(matches[-1])
                     pct = min(1.0, us / 1e6 / duration)
                     overall = slice_start + int(pct * (slice_end - slice_start))
-                    if overall > last_pct:
-                        last_pct = overall
-                        alive = ui.pbar_set(handle, overall, f"Converting: {label}")
-                        if not alive:
-                            proc.kill()
-                            cancelled = True
-                            break
             except Exception:
                 pass
+            if overall > last_pct:
+                last_pct = overall
+            alive = ui.pbar_set(handle, last_pct, f"Converting: {label}")
+            if not alive:
+                proc.kill()
+                cancelled = True
+                break
 
         proc.wait()
 
@@ -166,17 +166,28 @@ def convert_files(files: list[str], target_format: str):
                 output_path.unlink()
             except Exception:
                 pass
+            try:
+                os.unlink(err_path)
+            except Exception:
+                pass
             ui.pbar_close(handle)
             ui.notify("Audio Converter - Cancelled", f"Cancelled on file {idx + 1} of {total}", "dialog-cancel")
             return
 
         if proc.returncode != 0:
-            stderr = proc.stderr.read() if proc.stderr else b""
+            try:
+                stderr = Path(err_path).read_bytes()
+            except Exception:
+                stderr = b""
             errors.append(f"{input_path.name}:\n{stderr.decode(errors='replace')[:400]}")
             try:
                 output_path.unlink()
             except Exception:
                 pass
+        try:
+            os.unlink(err_path)
+        except Exception:
+            pass
         else:
             done += 1
             ui.pbar_set(handle, slice_end, f"Done: {label}")

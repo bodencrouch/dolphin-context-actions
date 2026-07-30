@@ -1,6 +1,19 @@
 """Shared helpers for the media converters."""
 
+import subprocess
 from pathlib import Path
+
+
+def get_duration(filepath: str) -> float | None:
+    try:
+        r = subprocess.run(
+            ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+             "-of", "default=noprint_wrappers=1:nokey=1", filepath],
+            capture_output=True, text=True, timeout=30,
+        )
+        return float(r.stdout.strip())
+    except Exception:
+        return None
 
 
 def unique_output(destination: Path) -> Path:

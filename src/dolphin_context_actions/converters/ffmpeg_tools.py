@@ -26,9 +26,12 @@ def _encoders(binary: str) -> frozenset[str]:
             capture_output=True, text=True, timeout=15,
         )
         for line in result.stdout.splitlines():
-            # Rows look like " A....D libmp3lame  libmp3lame MP3 ...".
+            # Rows look like " A....D libmp3lame  libmp3lame MP3 ...". The
+            # legend above them ("V..... = Video", "A..... = Audio", ...) has
+            # the same 6-char flag-column width, so parts[1] == "=" is the
+            # extra check that tells a legend line from a real encoder row.
             parts = line.split()
-            if len(parts) >= 2 and len(parts[0]) == 6 and not line.startswith(" -"):
+            if len(parts) >= 2 and len(parts[0]) == 6 and parts[1] != "=" and not line.startswith(" -"):
                 names.add(parts[1])
     except Exception:
         pass
