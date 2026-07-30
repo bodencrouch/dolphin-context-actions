@@ -52,6 +52,23 @@ bool isPlainLeafName(const QString &name)
     return !name.isEmpty() && !name.contains(QLatin1Char('/')) && name != QLatin1String(".") && name != QLatin1String("..");
 }
 
+// Splits an absolute path into (parent directory, leaf name), e.g.
+// "/a/b/c" -> ("/a/b", "c"), "/c" -> ("/", "c"). Returns false if the path
+// has no plain leaf component (empty, ".", "..", or a trailing slash).
+bool splitParentAndLeaf(const QString &path, QString &parentDir, QString &leaf)
+{
+    QStringList components;
+    if (!splitAbsolutePath(path, components) || components.isEmpty()) {
+        return false;
+    }
+    leaf = components.takeLast();
+    if (!isPlainLeafName(leaf)) {
+        return false;
+    }
+    parentDir = QLatin1Char('/') + components.join(QLatin1Char('/'));
+    return true;
+}
+
 // Opens targetDir following no symlinks anywhere in its path, by walking one
 // component at a time from "/". Returns an O_PATH fd suitable as the dirfd
 // argument to *at() calls, or -1 on failure (errno is set).
@@ -144,35 +161,70 @@ public Q_SLOTS:
         if (!isPlainLeafName(leafName)) {
             return fail(QStringLiteral("Invalid link name."));
         }
-        if (!source.startsWith(QLatin1Char('/'))) {
+
+        QString sourceParent;
+        QString sourceLeaf;
+        if (!splitParentAndLeaf(source, sourceParent, sourceLeaf)) {
             return fail(QStringLiteral("Source must be an absolute path."));
         }
 
+        // Same O_NOFOLLOW component walk used for the destination: without
+        // it, a symlink swapped into any directory component on the way to
+        // the source -- not just the leaf -- could redirect which file gets
+        // hardlinked, in the window between this call and the caller's own
+        // (untrusted) check.
+        const int sourceDirFd = openDirectoryNoFollow(sourceParent);
+        if (sourceDirFd < 0) {
+            return failErrno(QStringLiteral("Cannot open source directory"), errno);
+        }
+
+        const QByteArray sourceLeafBytes = sourceLeaf.toLocal8Bit();
+
         // Hardlinks only make sense for regular files. Checking here (not just
         // in the unprivileged caller) matters because this process is root:
-        // lstat, not stat, so a symlink source is rejected rather than
+        // AT_SYMLINK_NOFOLLOW, so a symlink source is rejected rather than
         // silently followed to something the caller didn't intend to link.
         struct stat st;
-        const QByteArray sourceBytes = source.toLocal8Bit();
-        if (lstat(sourceBytes.constData(), &st) != 0) {
-            return failErrno(QStringLiteral("Cannot inspect source"), errno);
+        if (fstatat(sourceDirFd, sourceLeafBytes.constData(), &st, AT_SYMLINK_NOFOLLOW) != 0) {
+            const int savedErrno = errno;
+            close(sourceDirFd);
+            return failErrno(QStringLiteral("Cannot inspect source"), savedErrno);
         }
         if (!S_ISREG(st.st_mode)) {
+            close(sourceDirFd);
             return fail(QStringLiteral("Only regular files can be hardlinked."));
+        }
+
+        // This process is root, so it can hardlink any file regardless of
+        // ownership -- bypassing the kernel's fs.protected_hardlinks
+        // restriction, which exists specifically to stop a user linking to
+        // files they don't own. Restore that same boundary explicitly: only
+        // hardlink a source the requesting (unprivileged) user actually owns.
+        const int callerUid = HelperSupport::callerUid();
+        if (callerUid < 0) {
+            close(sourceDirFd);
+            return fail(QStringLiteral("Cannot determine caller identity."));
+        }
+        if (static_cast<uid_t>(callerUid) != st.st_uid) {
+            close(sourceDirFd);
+            return fail(QStringLiteral("Source is not owned by the requesting user."));
         }
 
         const int dirfd = openDirectoryNoFollow(targetDir);
         if (dirfd < 0) {
-            return failErrno(QStringLiteral("Cannot open destination directory"), errno);
+            const int savedErrno = errno;
+            close(sourceDirFd);
+            return failErrno(QStringLiteral("Cannot open destination directory"), savedErrno);
         }
 
         const QByteArray leaf = leafName.toLocal8Bit();
-        // AT_FDCWD + an absolute oldpath ignores the fd; no AT_SYMLINK_FOLLOW,
-        // matching link(2)'s default of not following a symlink oldpath (moot
-        // here since we already rejected non-regular sources above).
-        const int rc = linkat(AT_FDCWD, sourceBytes.constData(), dirfd, leaf.constData(), 0);
+        // No AT_SYMLINK_FOLLOW, matching link(2)'s default of not following a
+        // symlink oldpath (moot here since non-regular sources are already
+        // rejected above).
+        const int rc = linkat(sourceDirFd, sourceLeafBytes.constData(), dirfd, leaf.constData(), 0);
         const int savedErrno = errno;
         close(dirfd);
+        close(sourceDirFd);
 
         if (rc != 0) {
             if (savedErrno == EEXIST) {

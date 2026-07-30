@@ -84,7 +84,7 @@ def _imgur_upload_single(filepath: str, client_id: str) -> str | None:
     ]
     body = b"".join(body_parts)
 
-    conn = http.client.HTTPSConnection("api.imgur.com")
+    conn = http.client.HTTPSConnection("api.imgur.com", timeout=30)
     conn.request(
         "POST",
         "/3/image",
