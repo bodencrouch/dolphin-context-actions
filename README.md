@@ -63,7 +63,10 @@ See [INSTALL.md](INSTALL.md) for every available method:
 | AppImage | Download and run from releases |
 | From source | `make install` |
 
-Use the source install to enable the root **Pick Link Source** action.
+Only the source install (`make install` / `install.sh`) currently builds
+`kio-plugin/`, so it's the only method that provides the Link Shell
+Extension features (**Pick Link Source** / **Drop Link As**) at all — see
+[Limitations](#link-shell-extension-on-linux) below.
 
 After installation, restart Dolphin (`killall dolphin`) to load the service
 menus. The **Context Actions** submenu will appear when you right-click any
@@ -123,8 +126,13 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
   helper is fundamentally incompatible with their sandboxing — there is no
   way to install a system D-Bus service or polkit action from inside a
   Flatpak/Snap confinement. Those formats ship the media-conversion CLI and
-  service menus only. Use the native rpm/deb/Arch package, or `install.sh`,
-  for the link features.
+  service menus only.
+- **rpm / deb / Arch packages** — these currently package the Python CLI and
+  service menus only; none of them build `kio-plugin/` yet either, so the
+  Link Shell Extension features (Pick Link Source / Drop Link As) aren't
+  available from the packaged builds at all right now. `install.sh` /
+  `make install`, run from a source checkout, is the only path that builds
+  and installs the plugin and its KAuth helper today.
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
@@ -145,9 +153,9 @@ something a reviewable privileged helper should do. They work normally when
 the destination is writable, and fail with a plain permission error otherwise.
 
 This elevation path requires the KAuth helper to be installed to system
-directories (`install.sh` / `Makefile` / the rpm, deb, and Arch packages do
-this). It is not available under Flatpak, Snap, or AppImage — see
-[Limitations](#link-shell-extension-on-linux) below.
+directories, which today only `install.sh` / `make install` do — see
+[Limitations](#link-shell-extension-on-linux) above for which install
+methods currently build `kio-plugin/` at all.
 
 **If you ever install this project's Python package as root** (`sudo pip
 install`, `pkexec pip install --user -e .`) — don't; it isn't needed, since

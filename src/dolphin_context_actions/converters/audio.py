@@ -1,6 +1,5 @@
 import os
 import re
-import shutil
 import subprocess
 import tempfile
 import time
@@ -62,25 +61,6 @@ AUDIO_PRESETS = {
 }
 
 AUDIO_FORMATS = sorted(AUDIO_PRESETS.keys())
-
-
-def detect(input_path: Path) -> str | None:
-    ext = input_path.suffix.lower().lstrip(".")
-    for fmt in ("mp3", "ogg", "flac", "wav", "m4a", "opus", "alac", "wma", "aac", "ac3"):
-        if ext == fmt:
-            return fmt
-    try:
-        r = subprocess.run(
-            ["ffprobe", "-v", "error", "-show_entries", "format=format_name",
-             "-of", "default=noprint_wrappers=1:nokey=1", str(input_path)],
-            capture_output=True, text=True, timeout=15,
-        )
-        probe = r.stdout.strip()
-        if probe and ("audio" in probe.lower() or probe in ("mp3", "ogg", "wav", "flac", "aac")):
-            return probe.split(",")[0]
-    except Exception:
-        pass
-    return None
 
 
 def get_duration(filepath: str) -> float | None:
