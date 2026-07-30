@@ -23,10 +23,17 @@ def kdialog(*args) -> subprocess.CompletedProcess:
 
 
 def notify(title: str, msg: str, icon: str = "document-convert"):
-    subprocess.run(
-        ["notify-send", "-i", icon, "-a", "Context Actions", title, msg],
-        capture_output=True,
-    )
+    # Fire and forget. notify-send blocks indefinitely when no notification
+    # daemon is running, which used to stall the caller mid-operation.
+    try:
+        subprocess.Popen(
+            ["notify-send", "-i", icon, "-a", "Context Actions", title, msg],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except OSError:
+        pass  # notify-send not installed; notifications are advisory
 
 
 def error_dialog(title: str, msg: str):
@@ -48,6 +55,8 @@ def confirm_dialog(title: str, msg: str) -> bool:
 def menu_dialog(title: str, prompt: str, items: list[tuple[str, str]]) -> str | None:
     args = ["--title", title, "--menu", prompt]
     for key, label in items:
+        if not label:
+            continue  # kdialog has no separators; a blank row is just a dead entry
         args += [key, label]
     r = kdialog(*args)
     if r.returncode != 0:

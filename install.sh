@@ -4,6 +4,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+# `pip install --user -e .` writes a .pth file pointing back at this checkout.
+# Run as root (sudo/pkexec on the whole script, not just the plugin install
+# step below) that .pth file ends up root-owned while still pointing at a
+# directory this user can write to -- any root Python process then has a
+# user-writable directory on its import path. Hit this exact class of bug
+# twice already; refusing outright is cheaper than relying on cleanup after
+# the fact. `sudo` is still used, but only for the one step that needs it.
+if [ "$(id -u)" -eq 0 ]; then
+    echo "Do not run this installer as root (or via sudo/pkexec)." >&2
+    echo "It calls sudo itself for the one step that needs it." >&2
+    exit 1
+fi
+
 SERVICEDIR="${HOME}/.local/share/kio/servicemenus"
 CONFIGDIR="${HOME}/.config/dolphin-context-actions"
 
@@ -49,9 +62,12 @@ install_service_menus() {
         fi
     done
 
+    # Menus installed under former project names still call the old executable,
+    # so they show up in Dolphin and silently do nothing when clicked.
     rm -f \
         "${SERVICEDIR}/dolphin-link-extension.desktop" \
-        "${SERVICEDIR}/dolphin-link-extension-bg.desktop"
+        "${SERVICEDIR}/dolphin-link-extension-bg.desktop" \
+        "${SERVICEDIR}/dolphin-convert-actions.desktop"
 }
 
 install_link_plugin() {
@@ -84,3 +100,6 @@ echo "  Config dir:    ${CONFIGDIR}/"
 echo "  Bin dir:       ${HOME}/.local/bin/"
 echo ""
 echo "Restart Dolphin (killall dolphin) to reload service menus."
+echo ""
+echo "If you ever install this package's Python component as root (sudo/pkexec"
+echo "pip install), run scripts/check-privileged-pth.py --fix afterward."

@@ -1,0 +1,13 @@
+[Domain]
+Name=Dolphin Context Actions
+Icon=folder
+
+[io.github.bodencrouch.linkhelper.createsymlink]
+Name=Create a link in a system directory
+Description=Authentication is required to create a symlink outside your home directory
+Policy=auth_admin
+
+[io.github.bodencrouch.linkhelper.createhardlink]
+Name=Create a link in a system directory
+Description=Authentication is required to create a hardlink outside your home directory
+Policy=auth_admin

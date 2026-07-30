@@ -4,12 +4,24 @@ CONFIGDIR ?= $(HOME)/.config/dolphin-context-actions
 PLUGINBUILDDIR ?= build/kio-plugin
 PLUGINPREFIX ?= /usr
 
-.PHONY: all install uninstall pip-install install-menus install-menus-only plugin-build install-plugin
+.PHONY: all install uninstall pip-install install-menus install-menus-only plugin-build install-plugin doctor
 
 all: install
 
+# `pip install -e .` as root leaves a .pth file pointing back at this checkout
+# owned by root but referencing a directory this user can still write to --
+# see scripts/check-privileged-pth.py for the full explanation. Refuse rather
+# than rely on catching it after the fact.
 pip-install:
+	@if [ "$$(id -u)" -eq 0 ]; then \
+		echo "Do not run 'make pip-install'/'make install' as root (or via sudo/pkexec)." >&2; \
+		echo "install-plugin below calls sudo itself for the one step that needs it." >&2; \
+		exit 1; \
+	fi
 	pip install -e .
+
+doctor:
+	python3 scripts/check-privileged-pth.py
 
 install-menus:
 	mkdir -p $(SERVICEDIR) $(CONFIGDIR)
@@ -47,6 +59,10 @@ uninstall:
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
 	sudo rm -f $(PLUGINPREFIX)/lib64/qt6/plugins/kf6/kfileitemaction/dolphinlinkfileitemaction.so
+	sudo rm -f /usr/libexec/kf6/kauth/linkhelper
+	sudo rm -f /usr/share/polkit-1/actions/io.github.bodencrouch.linkhelper.policy
+	sudo rm -f /usr/share/dbus-1/system-services/io.github.bodencrouch.linkhelper.service
+	sudo rm -f /usr/share/dbus-1/system.d/io.github.bodencrouch.linkhelper.conf
 	@echo "✓ Uninstalled."
 
 reinstall: uninstall install
