@@ -1,3 +1,10 @@
+# Intentionally does not build kio-plugin/ (the Dolphin context-menu plugin
+# and its KAuth privileged-link helper). AppImage is a relocatable, unprivileged
+# user bundle with no root-owned install step, so it cannot host a root-owned
+# D-Bus system service or polkit action. This bundle ships the CLI only; Link
+# Shell Extension features (Pick Link Source / Drop Link As), which need the
+# plugin registered with Dolphin/KIO, are unavailable from an AppImage. Use the
+# native rpm/deb/Arch package, or install.sh, for those.
 version: 1
 AppDir:
   app_info:

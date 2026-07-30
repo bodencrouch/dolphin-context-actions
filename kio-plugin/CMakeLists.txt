@@ -13,7 +13,7 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 include(CTest)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets)
-find_package(KF6 6.0 REQUIRED COMPONENTS CoreAddons KIO)
+find_package(KF6 6.0 REQUIRED COMPONENTS CoreAddons KIO Auth)
 
 kcoreaddons_add_plugin(
     dolphinlinkfileitemaction
@@ -26,7 +26,20 @@ target_link_libraries(
         Qt6::Widgets
         KF6::CoreAddons
         KF6::KIOWidgets
+        KF6::AuthCore
 )
+
+# Root-owned helper that creates a single symlink/hardlink outside the user's
+# home directory. D-Bus-activated by polkit; never invoked by path from an
+# unprivileged process (that would be the pkexec-on-a-user-script antipattern
+# this replaces). See linkhelper.cpp for the security rationale.
+add_executable(linkhelper linkhelper.cpp)
+target_link_libraries(linkhelper PRIVATE KF6::AuthCore)
+
+kauth_install_helper_files(linkhelper io.github.bodencrouch.linkhelper root)
+kauth_install_actions(io.github.bodencrouch.linkhelper io.github.bodencrouch.linkhelper.actions)
+
+install(TARGETS linkhelper DESTINATION ${KAUTH_HELPER_INSTALL_DIR})
 
 if(BUILD_TESTING)
     add_executable(link_menu_probe ../tests/link_menu_probe.cpp)
