@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dolphin-context-actions"
 version = "0.1.0"
-description = "Media conversion and file-linking actions for Dolphin's context menu"
+description = "File conversion and link actions for Dolphin's context menu"
 readme = "README.md"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 keywords = ["dolphin", "kde", "service-menu", "ffmpeg", "converter", "gif", "audio", "imgur"]
 
 authors = [
@@ -17,9 +17,7 @@ authors = [
 
 classifiers = [
   "Development Status :: 5 - Production/Stable",
-  "Environment :: KDE",
   "Intended Audience :: End Users/Desktop",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: POSIX :: Linux",
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
@@ -29,10 +27,9 @@ classifiers = [
   "Topic :: Multimedia :: Graphics :: Graphics Conversion",
   "Topic :: Multimedia :: Sound/Audio :: Conversion",
   "Topic :: Multimedia :: Video :: Conversion",
-  "Topic :: Desktop Environment :: KDE",
 ]
 
-dependencies = []
+dependencies = ["PyYAML>=6"]
 
 [project.urls]
 Homepage = "https://github.com/bodencrouch/dolphin-context-actions"
@@ -41,9 +38,10 @@ Issues = "https://github.com/bodencrouch/dolphin-context-actions/issues"
 
 [project.scripts]
 dolphin-context-actions = "dolphin_context_actions.cli:main"
+dolphin-context-actions-generate-menus = "dolphin_context_actions.file_converter_menus:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-dolphin_context_actions = ["py.typed"]
+dolphin_context_actions = ["py.typed", "conversions.yaml"]

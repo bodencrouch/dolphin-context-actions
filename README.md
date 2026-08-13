@@ -1,9 +1,8 @@
 # Dolphin Context Actions
 
-Adds media conversion and file-linking actions to Dolphin's right-click menu.
+Adds file conversion, media tools, and link actions to Dolphin's right-click menu.
 
-Right-click any media file in Dolphin and get only the conversion actions
-that make sense — no clutter, no irrelevant options.
+Right-click a supported file to see the actions that apply to it.
 
 ## How it works
 
@@ -15,6 +14,10 @@ The menu adapts to the file you right-click:
 | `.mp4` / `.webm` / `.mkv` / `.avi` / `.mov` | Convert to GIF (with quality presets) · Re-encode to MP4, WebM, MKV · Extract Audio · Upload to Imgur |
 | `.mp3` / `.ogg` / `.flac` / `.wav` / `.m4a` / `.opus` | Convert between formats (source format is omitted) |
 | `.png` / `.jpg` / `.jpeg` | Upload to Imgur |
+| `.pdf` / office documents | Extract text or create a PDF |
+| `.md` / `.html` | Convert between Markdown, HTML, and PDF |
+| `.yaml` / `.json` / `.toml` / `.csv` / `.tsv` | Convert structured data |
+| `.png` / `.jpg` / `.webp` / `.heic` | Convert image formats |
 
 A dedicated **Audio Converter** submenu also appears for audio and video
 files with all 7 formats available as one-click actions.
@@ -35,6 +38,9 @@ files with all 7 formats available as one-click actions.
 - **Batch processing** — select multiple files, process them all at once
 - **Configurable defaults** — set your preferred audio format and GIF preset
 - **Notifications** — desktop notification on completion (or errors)
+- **Document conversion** — use LibreOffice, pandoc, or PyMuPDF when installed
+- **Data conversion** — convert YAML, JSON, TOML, CSV, and TSV files
+- **Image conversion** — convert PNG, JPEG, WebP, and HEIC files with ImageMagick
 
 ### Create links from Dolphin
 
@@ -69,8 +75,8 @@ Extension features (**Pick Link Source** / **Drop Link As**) at all — see
 [Limitations](#link-shell-extension-on-linux) below.
 
 After installation, restart Dolphin (`killall dolphin`) to load the service
-menus. The **Context Actions** submenu will appear when you right-click any
-supported media file.
+menus. The matching action menus will appear when you right-click a supported
+file.
 
 ## Quick start
 
@@ -79,7 +85,8 @@ supported media file.
 3. Right-click a `.mp4` → **Context Actions** → **Convert to GIF…** →
    choose a preset
 4. Right-click an `.mp3` → **Audio Converter** → **Convert to FLAC**
-5. Right-click any image → **Context Actions** → **Upload to Imgur**
+5. Right-click a `.csv` file → **Convert** → **To JSON**
+6. Right-click an image → **Context Actions** → **Upload to Imgur**
 
 ### Create a link
 
@@ -99,6 +106,7 @@ the settings dialog where you can set:
   https://api.imgur.com/oauth2/addclient)
 
 Configuration is stored in `~/.config/dolphin-context-actions/config.json`.
+The editable conversion catalog is stored beside it as `conversions.yaml`.
 
 ## Requirements
 
@@ -107,6 +115,11 @@ Configuration is stored in `~/.config/dolphin-context-actions/config.json`.
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
 - **KIO 6** (for the root context-menu plugin)
+- **PyYAML 6+** (for the conversion catalog)
+
+Some conversions need extra tools. The installer only adds menu actions whose
+dependencies are available. See [Adding conversions](docs/adding-conversions.md)
+for the engine list.
 
 ## Limitations
 
@@ -191,6 +204,9 @@ for any Python project.
 │   └── dolphin-audio-converter.desktop         # Dedicated audio submenu
 ├── src/dolphin_context_actions/
 │   ├── cli.py                  # CLI entry point + smart dispatch
+│   ├── file_converter.py       # Document, data, and image conversion engines
+│   ├── file_converter_menus.py # Generate conversion service menus
+│   ├── conversions.yaml        # Bundled conversion catalog
 │   ├── ui.py                   # kdialog progress bars / dialogs
 │   ├── config.py               # Config management
 │   ├── link_ops.py             # Link Shell Extension operations

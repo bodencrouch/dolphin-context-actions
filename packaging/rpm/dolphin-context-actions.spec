@@ -13,7 +13,7 @@ Source0:  %{url}/archive/v%{unver}/%{pname}-%{unver}.tar.gz
 
 BuildArch: noarch
 BuildRequires: python3-devel, python3-setuptools
-Requires:  python3 >= 3.10, ffmpeg >= 4.4, kdialog, libnotify
+Requires:  python3 >= 3.10, python3-pyyaml, ffmpeg >= 4.4, kdialog, libnotify
 
 %description
 Adds intelligent right-click actions to Dolphin (KDE file manager) for

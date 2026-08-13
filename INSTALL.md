@@ -159,6 +159,15 @@ All installation methods require these runtime dependencies:
 - **kdialog** (KDE dialog tool)
 - **libnotify** (desktop notifications)
 - **KIO 6** (Dolphin context-menu integration)
+- **PyYAML 6+** (conversion catalog)
+
+General conversions use optional tools. Install only the ones you need:
+
+- PyMuPDF for PDF text extraction
+- LibreOffice for office documents
+- pandoc for Markdown and HTML
+- tomli-w for JSON to TOML
+- ImageMagick for image formats
 
 Building from source also requires CMake, Extra CMake Modules, Qt 6 headers,
 and KIO 6 headers. On Fedora:
@@ -172,16 +181,16 @@ Install them:
 
 ```bash
 # Debian/Ubuntu
-sudo apt install ffmpeg kdialog libnotify-bin python3
+sudo apt install ffmpeg kdialog libnotify-bin python3 python3-yaml
 
 # Fedora
-sudo dnf install ffmpeg kdialog libnotify python3
+sudo dnf install ffmpeg kdialog libnotify python3 python3-pyyaml
 
 # Arch
-sudo pacman -S ffmpeg kdialog libnotify python
+sudo pacman -S ffmpeg kdialog libnotify python python-yaml
 
 # openSUSE
-sudo zypper install ffmpeg kdialog libnotify python3
+sudo zypper install ffmpeg kdialog libnotify python3 python3-PyYAML
 ```
 
 ## Service menu location

@@ -19,6 +19,8 @@ fi
 
 SERVICEDIR="${HOME}/.local/share/kio/servicemenus"
 CONFIGDIR="${HOME}/.config/dolphin-context-actions"
+REGISTRY_SRC="src/dolphin_context_actions/conversions.yaml"
+REGISTRY_DST="${CONFIGDIR}/conversions.yaml"
 
 is_installed() {
     pip show dolphin-context-actions >/dev/null 2>&1
@@ -62,12 +64,22 @@ install_service_menus() {
         fi
     done
 
+    if [ ! -f "$REGISTRY_DST" ]; then
+        cp "$REGISTRY_SRC" "$REGISTRY_DST"
+    fi
+
+    python3 -m dolphin_context_actions.file_converter_menus \
+        --output-dir "$SERVICEDIR" \
+        --converter-bin "${HOME}/.local/bin/dolphin-context-actions" \
+        --registry "$REGISTRY_DST"
+
     # Menus installed under former project names still call the old executable,
     # so they show up in Dolphin and silently do nothing when clicked.
     rm -f \
         "${SERVICEDIR}/dolphin-link-extension.desktop" \
         "${SERVICEDIR}/dolphin-link-extension-bg.desktop" \
         "${SERVICEDIR}/dolphin-convert-actions.desktop"
+    rm -f "${SERVICEDIR}"/dolphin-file-converter-*.desktop
 }
 
 install_link_plugin() {
