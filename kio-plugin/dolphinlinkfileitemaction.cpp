@@ -128,6 +128,14 @@ private:
         for (const QUrl &url : urls) {
             if (url.isLocalFile()) {
                 paths.append(QDir::cleanPath(url.toLocalFile()));
+            } else if (url.scheme() == QLatin1String("admin")) {
+                // KIO's "Open as Administrator" (kio-admin) browses the same
+                // local filesystem under admin:// instead of file://, with the
+                // path component unchanged. Recognizing it here is what makes
+                // these actions appear while Dolphin is in admin mode -- the
+                // KAuth helper below handles the actual privileged link
+                // creation either way, kio-admin plays no part in that.
+                paths.append(QDir::cleanPath(url.path()));
             }
         }
         return paths;
