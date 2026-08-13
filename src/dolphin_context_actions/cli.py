@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from . import config as cfgmod
-from . import link_ops, ui, uploaders
+from . import file_converter, link_ops, ui, uploaders
 from .converters import audio, video
 
 
@@ -311,6 +311,21 @@ def main():
     ], help="Batch convert mode")
     parser.add_argument("--format", help="Target format for batch mode")
     parser.add_argument("--configure", action="store_true", help="Open configuration")
+    parser.add_argument(
+        "--file-convert",
+        metavar="ID",
+        help="Run a document, data, or image conversion",
+    )
+    parser.add_argument(
+        "--pick-file-conversion",
+        action="store_true",
+        help="Choose a document, data, or image conversion",
+    )
+    parser.add_argument(
+        "--list-file-conversions",
+        action="store_true",
+        help="List document, data, and image conversions",
+    )
     
     # Link Shell Extension operations
     parser.add_argument("--pick-link-source", action="store_true", help="Pick files as link source")
@@ -328,6 +343,24 @@ def main():
     parser.add_argument("files", nargs="*")
 
     args = parser.parse_args()
+
+    if args.list_file_conversions:
+        for conversion in file_converter.load_conversions(available_only=False):
+            print(f"{conversion.id}\t{conversion.label}")
+        return 0
+
+    if args.file_convert:
+        return file_converter.run_convert(
+            args.file_convert,
+            [Path(raw) for raw in args.files],
+            overwrite=False,
+        )
+
+    if args.pick_file_conversion:
+        return file_converter.run_pick(
+            [Path(raw) for raw in args.files],
+            overwrite=False,
+        )
 
     if args.configure:
         run_configure()
@@ -381,7 +414,8 @@ def main():
         args.batch, args.configure, args.pick_link_source,
         args.cancel_link, args.drop_as, args.drop_hardlink, args.drop_symlink,
         args.hardlink_clone, args.symlink_clone, args.smart_copy,
-        args.link_properties, args.enumerate_hardlinks
+        args.link_properties, args.enumerate_hardlinks,
+        args.file_convert, args.pick_file_conversion, args.list_file_conversions,
     ]):
         smart_menu(args.files)
         return
