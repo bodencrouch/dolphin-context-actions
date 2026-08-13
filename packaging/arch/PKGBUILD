@@ -6,7 +6,7 @@ pkgdesc="Media conversion and file-linking actions for Dolphin's context menu"
 arch=('any')
 url="https://github.com/bodencrouch/dolphin-context-actions"
 license=('MIT')
-depends=('python>=3.10' 'ffmpeg>=4.4' 'kdialog' 'libnotify')
+depends=('python>=3.10' 'python-yaml' 'ffmpeg>=4.4' 'kdialog' 'libnotify')
 makedepends=('python-setuptools' 'python-build' 'python-installer')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/v$pkgver.tar.gz")
 sha256sums=('SKIP')

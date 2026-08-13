@@ -44,14 +44,28 @@ static QAction *findAction(const QList<QAction *> &actions, const QString &text)
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    if (argc < 2 || argc > 3) {
+    QStringList args;
+    for (int i = 1; i < argc; ++i) {
+        args << QString::fromLocal8Bit(argv[i]);
+    }
+
+    // --admin builds the item's URL under the admin:// scheme instead of
+    // file://, mirroring what Dolphin's "Open as Administrator" (kio-admin)
+    // hands the plugin -- lets this probe exercise that path without a real
+    // polkit prompt.
+    const bool asAdmin = args.removeAll(QStringLiteral("--admin")) > 0;
+    if (args.size() < 1 || args.size() > 2) {
         return 2;
     }
 
-    const QFileInfo file(QString::fromLocal8Bit(argv[1]));
+    const QFileInfo file(args.at(0));
     const QString mimeType = QMimeDatabase().mimeTypeForFile(file).name();
     const mode_t mode = file.isDir() ? S_IFDIR : S_IFREG;
-    KFileItemList selected{KFileItem(QUrl::fromLocalFile(file.absoluteFilePath()), mimeType, mode)};
+    QUrl url = QUrl::fromLocalFile(file.absoluteFilePath());
+    if (asAdmin) {
+        url.setScheme(QStringLiteral("admin"));
+    }
+    KFileItemList selected{KFileItem(url, mimeType, mode)};
 
     KFileItemActions fileItemActions;
     fileItemActions.setItemListProperties(KFileItemListProperties(selected));
@@ -60,8 +74,8 @@ int main(int argc, char **argv)
     fileItemActions.addActionsTo(&menu, KFileItemActions::MenuActionSource::Plugins);
     printActions(menu.actions());
 
-    if (argc == 3) {
-        QAction *action = findAction(menu.actions(), QString::fromLocal8Bit(argv[2]));
+    if (args.size() == 2) {
+        QAction *action = findAction(menu.actions(), args.at(1));
         if (!action) {
             return 3;
         }

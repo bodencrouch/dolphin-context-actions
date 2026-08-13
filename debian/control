@@ -13,9 +13,10 @@ Depends: ${python3:Depends}, ${misc:Depends},
          ffmpeg (>= 7:4.4),
          kdialog,
          python3 (>= 3.10),
+         python3-yaml,
 Recommends: notify-send (>= 0.8),
 Suggests: dolphin (>= 4:20.04),
-Description: Media conversion and file-linking actions for Dolphin's context menu
+Description: File conversion and link actions for Dolphin's context menu
  Adds intelligent right-click actions to Dolphin (KDE file manager) for
  converting media files. The menu adapts to file type — right-click a GIF
  to convert it to MP4 or upload to Imgur; right-click a video to convert

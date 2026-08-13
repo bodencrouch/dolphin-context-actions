@@ -1,6 +1,8 @@
 BINDIR ?= $(HOME)/.local/bin
 SERVICEDIR ?= $(HOME)/.local/share/kio/servicemenus
 CONFIGDIR ?= $(HOME)/.config/dolphin-context-actions
+CONVERTERBIN ?= $(BINDIR)/dolphin-context-actions
+REGISTRY ?= src/dolphin_context_actions/conversions.yaml
 PLUGINBUILDDIR ?= build/kio-plugin
 PLUGINPREFIX ?= /usr
 
@@ -31,6 +33,9 @@ install-menus:
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
+	@if [ ! -f "$(CONFIGDIR)/conversions.yaml" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.yaml; fi
+	python3 -m dolphin_context_actions.file_converter_menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.yaml
+	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 	@echo "✓ Service menus installed. Restart Dolphin (killall dolphin) to reload."
 
 plugin-build:
@@ -50,6 +55,9 @@ install-menus-only:
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
+	@if [ ! -f "$(CONFIGDIR)/conversions.yaml" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.yaml; fi
+	PYTHONPATH=src python3 -m dolphin_context_actions.file_converter_menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.yaml
+	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 	@echo "✓ Service menus installed."
 
 uninstall:
@@ -58,6 +66,8 @@ uninstall:
 	rm -f $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
+	rm -f $(SERVICEDIR)/dolphin-context-actions-convert-*.desktop
+	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 	sudo rm -f $(PLUGINPREFIX)/lib64/qt6/plugins/kf6/kfileitemaction/dolphinlinkfileitemaction.so
 	sudo rm -f /usr/libexec/kf6/kauth/linkhelper
 	sudo rm -f /usr/share/polkit-1/actions/io.github.bodencrouch.linkhelper.policy

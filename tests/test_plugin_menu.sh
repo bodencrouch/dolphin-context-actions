@@ -28,6 +28,11 @@ grep -Fx 'Pick Link Source' <<<"$idle_output"
 ! grep -Fx 'Drop Link As' <<<"$idle_output"
 ! grep -Fx 'Cancel Link Creation' <<<"$idle_output"
 
+admin_idle_output="$(run_probe --admin "${test_home}/work/source.txt")"
+grep -Fx 'Pick Link Source' <<<"$admin_idle_output"
+! grep -Fx 'Drop Link As' <<<"$admin_idle_output"
+! grep -Fx 'Cancel Link Creation' <<<"$admin_idle_output"
+
 run_probe "${test_home}/work/source.txt" 'Pick Link Source' >/dev/null
 picked_output="$(run_probe "${test_home}/work")"
 grep -Fx 'Drop Link As' <<<"$picked_output"
