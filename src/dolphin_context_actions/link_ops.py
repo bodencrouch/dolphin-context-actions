@@ -142,55 +142,81 @@ def cancel_link_creation():
         return False
 
 
-def _auto_rename_path(destination: Path, source: Path, kind: str = "Hardlink") -> Path:
-    """
-    Generate an auto-renamed path if destination exists.
-    
-    Pattern: "filename - Hardlink.ext", "filename - Hardlink (2).ext", etc.
-    """
-    if not destination.exists() and not destination.is_symlink():
-        return destination
-    
-    stem = source.stem
-    suffix = source.suffix
-    parent = destination.parent
-    
-    counter = 1
-    while True:
-        if counter == 1:
-            new_name = f"{stem} - {kind}{suffix}"
-        else:
-            new_name = f"{stem} - {kind} ({counter}){suffix}"
-        
-        new_path = parent / new_name
-        if not new_path.exists() and not new_path.is_symlink():
-            return new_path
-        counter += 1
+# 50 collisions on one name in one directory is already absurd; treat it as a
+# stuck loop rather than retrying forever. Kept in sync with the same bound in
+# the KIO plugin's elevated path (tryElevatedAttempt in
+# kio-plugin/dolphinlinkfileitemaction.cpp).
+_MAX_RENAME_ATTEMPTS = 50
 
 
-def _auto_rename_dir(destination: Path, source: Path, kind: str = "Hardlink") -> Path:
+def _candidate_leaf_name(source_name: str, kind: str, attempt: int, split_extension: bool) -> str:
+    """Return the Link Shell Extension-style name for the nth collision.
+
+    attempt 0 is the source name unchanged, 1 is "name - Hardlink.ext", and
+    every attempt after that appends " (2)", " (3)", ... before the extension.
+    Directories keep their whole name (a folder called "v1.2" must not become
+    "v1 - Symlink.2"), so callers pass split_extension=False for those.
+
+    Kept in sync with candidateLeafName() in the KIO plugin, so a collision
+    looks the same whether or not the drop needed administrator rights.
     """
-    Generate an auto-renamed path for directories.
-    
-    Pattern: "dirname - Hardlink", "dirname - Hardlink (2)", etc.
+    if attempt == 0:
+        return source_name
+
+    dot = source_name.rfind(".")
+    if split_extension and dot > 0:
+        stem, suffix = source_name[:dot], source_name[dot:]
+    else:
+        stem, suffix = source_name, ""
+
+    if attempt == 1:
+        return f"{stem} - {kind}{suffix}"
+    return f"{stem} - {kind} ({attempt}){suffix}"
+
+
+def _splits_extension(source: Path) -> bool:
+    """Whether a rename of this source should keep a trailing ".ext" last.
+
+    Directories keep their whole name, so "v1.2" stays "v1.2 - Symlink" rather
+    than becoming "v1 - Symlink.2".
     """
-    if not destination.exists() and not destination.is_symlink():
-        return destination
-    
-    parent = destination.parent
-    name = source.name
-    
-    counter = 1
-    while True:
-        if counter == 1:
-            new_name = f"{name} - {kind}"
-        else:
-            new_name = f"{name} - {kind} ({counter})"
-        
-        new_path = parent / new_name
-        if not new_path.exists() and not new_path.is_symlink():
-            return new_path
-        counter += 1
+    return not source.is_dir()
+
+
+def _create_with_rename(parent: Path, source_name: str, kind: str, split_extension: bool, create) -> Path:
+    """Call create(destination), stepping to the next free name on collision.
+
+    create() must claim the name atomically and raise FileExistsError if it is
+    taken -- os.symlink, os.link and os.mkdir all do. Checking exists() first
+    and creating second leaves a window where something else takes the name in
+    between, which is exactly the EEXIST failure this replaces.
+    """
+    for attempt in range(_MAX_RENAME_ATTEMPTS + 1):
+        destination = parent / _candidate_leaf_name(source_name, kind, attempt, split_extension)
+        try:
+            create(destination)
+            return destination
+        except FileExistsError:
+            continue
+    raise OSError(f"Too many name collisions in {parent} for {source_name}.")
+
+
+def _claim_directory(parent: Path, source_name: str, kind: str, split_extension: bool = False) -> Path:
+    """Create a new directory under parent, auto-renaming if the name is taken.
+
+    Returns the directory actually created, which may carry a
+    " - Hardlink Clone (2)" style suffix.
+    """
+    return _create_with_rename(parent, source_name, kind, split_extension, os.mkdir)
+
+
+def _claim_file(parent: Path, source_name: str, kind: str, split_extension: bool = True) -> Path:
+    """Create a new empty file under parent, auto-renaming if the name is taken."""
+
+    def create(path: Path):
+        os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+
+    return _create_with_rename(parent, source_name, kind, split_extension, create)
 
 
 def drop_hardlink(target_dir: str, relative_to: str | None = None):
@@ -227,24 +253,21 @@ def drop_hardlink(target_dir: str, relative_to: str | None = None):
         # behavior whether or not the destination needs elevation.
         is_real_file = source_path.is_file() and not source_path.is_symlink()
 
-        # Determine destination name
-        dest_name = source_path.name
-        dest_path = target_path / dest_name
-
-        # Auto-rename if needed
-        if is_real_file:
-            dest_path = _auto_rename_path(dest_path, source_path)
-        else:
-            dest_path = _auto_rename_dir(dest_path, source_path)
-
         try:
             if source_path.is_symlink():
                 raise OSError("Symlinks cannot be hardlinked. Use Drop Symlink.")
-            elif is_real_file:
-                os.link(source, str(dest_path), follow_symlinks=False)
-                created.append(str(dest_path))
-            else:
+            if not is_real_file:
                 raise OSError("Directories cannot be hardlinked. Use Drop Symlink.")
+            # A name already taken in the destination is not a failure: the
+            # link lands as "name - Hardlink.ext", then "name - Hardlink (2).ext".
+            dest_path = _create_with_rename(
+                target_path,
+                source_path.name,
+                "Hardlink",
+                _splits_extension(source_path),
+                lambda destination: os.link(source, str(destination), follow_symlinks=False),
+            )
+            created.append(str(dest_path))
         except Exception as e:
             failed.append((source, str(e)))
     
@@ -295,32 +318,28 @@ def drop_symlink(target_dir: str, relative: bool = True):
     
     for source in sources:
         source_path = Path(source)
-        
-        # Determine destination name
-        dest_name = source_path.name
-        dest_path = target_path / dest_name
-        
-        # Auto-rename if needed
-        if source_path.is_file():
-            dest_path = _auto_rename_path(dest_path, source_path, "Symlink")
+
+        if relative:
+            # Resolve the containing directory so ".." hops in the relative
+            # path are correct, but keep the leaf name unresolved so a
+            # picked symlink links to itself rather than to its target.
+            source_abs = os.path.join(
+                os.path.realpath(source_path.parent), source_path.name
+            )
+            link_value = os.path.relpath(source_abs, target_dir_abs)
         else:
-            dest_path = _auto_rename_dir(dest_path, source_path, "Symlink")
-        
+            link_value = source
+
         try:
-            if relative:
-                # Resolve the containing directory so ".." hops in the relative
-                # path are correct, but keep the leaf name unresolved so a
-                # picked symlink links to itself rather than to its target.
-                source_abs = os.path.join(
-                    os.path.realpath(source_path.parent), source_path.name
-                )
-                # Compute relative path from target to source
-                rel_path = os.path.relpath(source_abs, target_dir_abs)
-                os.symlink(rel_path, str(dest_path))
-            else:
-                # Absolute symlink
-                os.symlink(source, str(dest_path))
-            
+            # A name already taken in the destination is not a failure: the
+            # link lands as "name - Symlink.ext", then "name - Symlink (2).ext".
+            dest_path = _create_with_rename(
+                target_path,
+                source_path.name,
+                "Symlink",
+                _splits_extension(source_path),
+                lambda destination: os.symlink(link_value, str(destination)),
+            )
             created.append(str(dest_path))
         except Exception as e:
             failed.append((source, str(e)))
@@ -354,32 +373,43 @@ def hardlink_clone(source_dir: str, target_dir: str):
         source_dir: Source directory to clone
         target_dir: Destination directory
     """
-    source_path = Path(source_dir)
-    target_path = Path(target_dir)
-    
+    # Absolute so the "is this the clone I'm writing?" check below compares
+    # like with like, whatever form the caller passed these in.
+    source_path = Path(os.path.abspath(source_dir))
+    target_path = Path(os.path.abspath(target_dir))
+
     if not source_path.exists() or not source_path.is_dir():
         ui.error_dialog("Hardlink Clone", f"Source is not a valid directory: {source_dir}")
-        return False
-    
-    if target_path.exists():
-        ui.error_dialog("Hardlink Clone", f"Target directory already exists: {target_dir}")
         return False
     
     if not os.access(target_path.parent, os.W_OK):
         ui.error_dialog("Hardlink Clone", f"No write permission in: {target_path.parent}")
         return False
-    
+
+    # A taken name is not a failure: the clone lands as "name - Hardlink Clone",
+    # then "name - Hardlink Clone (2)". Claiming the directory with mkdir is
+    # also what reserves the name, so two clones started at once can't collide.
+    try:
+        clone_root = _claim_directory(target_path.parent, target_path.name, "Hardlink Clone")
+    except OSError as error:
+        ui.error_dialog("Hardlink Clone", f"Clone failed: {error}")
+        return False
+
     created_count = {"files": 0, "dirs": 0, "symlinks": 0}
     try:
-        target_path.mkdir(parents=True)
         for root, dirs, files in os.walk(source_path, followlinks=False):
             source_root = Path(root)
-            target_root = target_path / source_root.relative_to(source_path)
+            target_root = clone_root / source_root.relative_to(source_path)
             target_root.mkdir(parents=True, exist_ok=True)
 
             for dirname in list(dirs):
                 source_item = source_root / dirname
                 target_item = target_root / dirname
+                # Cloning a folder into itself would otherwise walk into the
+                # clone being written and recurse without end.
+                if source_item == clone_root:
+                    dirs.remove(dirname)
+                    continue
                 if source_item.is_symlink():
                     os.symlink(os.readlink(source_item), target_item)
                     dirs.remove(dirname)
@@ -398,7 +428,7 @@ def hardlink_clone(source_dir: str, target_dir: str):
                     os.link(source_item, target_item)
                     created_count["files"] += 1
     except Exception as error:
-        shutil.rmtree(target_path, ignore_errors=True)
+        shutil.rmtree(clone_root, ignore_errors=True)
         ui.error_dialog("Hardlink Clone", f"Clone failed: {error}")
         return False
 
@@ -410,7 +440,7 @@ def hardlink_clone(source_dir: str, target_dir: str):
     if created_count["symlinks"] > 0:
         msg_parts.append(f"{created_count['symlinks']} symlinks")
 
-    ui.notify("Hardlink Clone Created", f"Created: {', '.join(msg_parts)}", "folder")
+    ui.notify("Hardlink Clone Created", f"{clone_root.name}: {', '.join(msg_parts)}", "folder")
     return True
 
 
@@ -426,32 +456,38 @@ def symlink_clone(source_dir: str, target_dir: str, relative: bool = True):
         target_dir: Destination directory
         relative: Create relative symlinks when possible
     """
-    source_path = Path(source_dir)
-    target_path = Path(target_dir)
-    
+    source_path = Path(os.path.abspath(source_dir))
+    target_path = Path(os.path.abspath(target_dir))
+
     if not source_path.exists() or not source_path.is_dir():
         ui.error_dialog("Symlink Clone", f"Source is not a valid directory: {source_dir}")
-        return False
-    
-    if target_path.exists():
-        ui.error_dialog("Symlink Clone", f"Target directory already exists: {target_dir}")
         return False
     
     if not os.access(target_path.parent, os.W_OK):
         ui.error_dialog("Symlink Clone", f"No write permission in: {target_path.parent}")
         return False
-    
+
+    # Same rule as Hardlink Clone: a taken name renames to
+    # "name - Symlink Clone", "name - Symlink Clone (2)", and so on.
+    try:
+        clone_root = _claim_directory(target_path.parent, target_path.name, "Symlink Clone")
+    except OSError as error:
+        ui.error_dialog("Symlink Clone", f"Clone failed: {error}")
+        return False
+
     created_count = {"dirs": 0, "files": 0}
     try:
-        target_path.mkdir(parents=True)
         for root, dirs, files in os.walk(source_path, followlinks=False):
             source_root = Path(root)
-            target_root = target_path / source_root.relative_to(source_path)
+            target_root = clone_root / source_root.relative_to(source_path)
             target_root.mkdir(parents=True, exist_ok=True)
 
             for dirname in list(dirs):
                 source_item = source_root / dirname
                 target_item = target_root / dirname
+                if source_item == clone_root:
+                    dirs.remove(dirname)
+                    continue
                 if source_item.is_symlink():
                     link_target = os.path.relpath(source_item, target_root) if relative else source_item
                     os.symlink(link_target, target_item)
@@ -468,7 +504,7 @@ def symlink_clone(source_dir: str, target_dir: str, relative: bool = True):
                 os.symlink(link_target, target_item)
                 created_count["files"] += 1
     except Exception as error:
-        shutil.rmtree(target_path, ignore_errors=True)
+        shutil.rmtree(clone_root, ignore_errors=True)
         ui.error_dialog("Symlink Clone", f"Clone failed: {error}")
         return False
 
@@ -478,7 +514,7 @@ def symlink_clone(source_dir: str, target_dir: str, relative: bool = True):
     if created_count["files"] > 0:
         msg_parts.append(f"{created_count['files']} symlinks")
 
-    ui.notify("Symlink Clone Created", f"Created: {', '.join(msg_parts)}", "folder")
+    ui.notify("Symlink Clone Created", f"{clone_root.name}: {', '.join(msg_parts)}", "folder")
     return True
 
 
@@ -492,9 +528,9 @@ def smart_copy(source: str, target_dir: str):
         source: Source file or directory
         target_dir: Target directory
     """
-    source_path = Path(source)
-    target_path = Path(target_dir)
-    
+    source_path = Path(os.path.abspath(source))
+    target_path = Path(os.path.abspath(target_dir))
+
     if not source_path.exists() and not source_path.is_symlink():
         ui.error_dialog("Smart Copy", f"Source does not exist: {source}")
         return False
@@ -506,12 +542,6 @@ def smart_copy(source: str, target_dir: str):
     if not os.access(target_dir, os.W_OK):
         ui.error_dialog("Smart Copy", f"No write permission in: {target_dir}")
         return False
-    
-    target_dest = target_path / source_path.name
-    if source_path.is_file():
-        target_dest = _auto_rename_path(target_dest, source_path, "Copy")
-    else:
-        target_dest = _auto_rename_dir(target_dest, source_path, "Copy")
     
     created_count = {"files": 0, "dirs": 0, "symlinks": 0, "hardlinks": 0}
     copied_inodes: dict[tuple[int, int], Path] = {}
@@ -537,13 +567,44 @@ def smart_copy(source: str, target_dir: str):
                 _copy_recursive(item, dst / item.name)
             shutil.copystat(src, dst, follow_symlinks=False)
 
+    # Only the top level can collide -- everything below it goes into a
+    # directory this call just created. A taken name becomes
+    # "name - Smart Copy.ext", then "name - Smart Copy (2).ext".
+    split_extension = _splits_extension(source_path)
+    target_dest: Path | None = None
     try:
-        _copy_recursive(source_path, target_dest)
-    except Exception as error:
-        if target_dest.is_dir() and not target_dest.is_symlink():
-            shutil.rmtree(target_dest, ignore_errors=True)
+        if source_path.is_symlink():
+            target_dest = _create_with_rename(
+                target_path,
+                source_path.name,
+                "Smart Copy",
+                split_extension,
+                lambda destination: os.symlink(os.readlink(source_path), destination),
+            )
+            created_count["symlinks"] += 1
+        elif source_path.is_dir():
+            target_dest = _claim_directory(target_path, source_path.name, "Smart Copy")
+            created_count["dirs"] += 1
+            for item in source_path.iterdir():
+                # Copying a folder into itself would otherwise descend into the
+                # copy being written.
+                if item == target_dest:
+                    continue
+                _copy_recursive(item, target_dest / item.name)
+            shutil.copystat(source_path, target_dest, follow_symlinks=False)
         else:
-            target_dest.unlink(missing_ok=True)
+            target_dest = _claim_file(target_path, source_path.name, "Smart Copy", split_extension)
+            shutil.copyfile(source_path, target_dest)
+            shutil.copystat(source_path, target_dest)
+            file_stat = source_path.stat()
+            copied_inodes[(file_stat.st_dev, file_stat.st_ino)] = target_dest
+            created_count["files"] += 1
+    except Exception as error:
+        if target_dest is not None:
+            if target_dest.is_dir() and not target_dest.is_symlink():
+                shutil.rmtree(target_dest, ignore_errors=True)
+            else:
+                target_dest.unlink(missing_ok=True)
         ui.error_dialog("Smart Copy", f"Copy failed: {error}")
         return False
 
@@ -557,7 +618,7 @@ def smart_copy(source: str, target_dir: str):
     if created_count["symlinks"] > 0:
         msg_parts.append(f"{created_count['symlinks']} symlinks")
 
-    ui.notify("Smart Copy Created", f"Copied: {', '.join(msg_parts)}", "folder")
+    ui.notify("Smart Copy Created", f"{target_dest.name}: {', '.join(msg_parts)}", "folder")
     return True
 
 
@@ -683,15 +744,13 @@ def drop_as(target_dir: str, drop_type: str, relative: bool = True):
             ui.error_dialog("Hardlink Clone", "Please pick exactly one directory for cloning.")
             return False
         source = Path(sources[0])
-        destination = _auto_rename_dir(Path(target_dir) / source.name, source, "Hardlink Clone")
-        success = hardlink_clone(str(source), str(destination))
+        success = hardlink_clone(str(source), str(Path(target_dir) / source.name))
     elif drop_type == "symlink-clone":
         if len(sources) != 1:
             ui.error_dialog("Symlink Clone", "Please pick exactly one directory for cloning.")
             return False
         source = Path(sources[0])
-        destination = _auto_rename_dir(Path(target_dir) / source.name, source, "Symlink Clone")
-        success = symlink_clone(str(source), str(destination), relative)
+        success = symlink_clone(str(source), str(Path(target_dir) / source.name), relative)
     elif drop_type == "smart-copy":
         if len(sources) != 1:
             ui.error_dialog("Smart Copy", "Please pick exactly one file or directory for smart copy.")

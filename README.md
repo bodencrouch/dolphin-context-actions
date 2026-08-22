@@ -149,6 +149,23 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
+### Dropping onto a name that is already taken
+
+A drop never overwrites what is already in the folder, and never fails just
+because the name is used. It renames what it drops, the way Link Shell
+Extension does:
+
+| Dropped as | First collision | Next |
+| --- | --- | --- |
+| Drop Hardlink | `report - Hardlink.txt` | `report - Hardlink (2).txt` |
+| Drop Symlink | `report - Symlink.txt` | `report - Symlink (2).txt` |
+| Hardlink Clone | `project - Hardlink Clone` | `project - Hardlink Clone (2)` |
+| Symlink Clone | `project - Symlink Clone` | `project - Symlink Clone (2)` |
+| Smart Copy | `project - Smart Copy` | `project - Smart Copy (2)` |
+
+The number is the first one free in that folder. Folders keep their whole
+name, so `v1.2` becomes `v1.2 - Symlink`, not `v1 - Symlink.2`.
+
 ### Dropping into a root-owned directory
 
 Dropping a hardlink or symlink into a directory you can't write to (`/`, `/usr`, etc.)

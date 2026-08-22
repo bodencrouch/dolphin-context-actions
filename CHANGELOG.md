@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+- **Dropping onto a name that is already taken now renames instead of
+  failing.** Every drop — Drop Hardlink, Drop Symlink, Hardlink Clone,
+  Symlink Clone, Smart Copy — falls back to `name - Hardlink.ext`, then
+  `name - Hardlink (2).ext`, picking the first number free in that folder,
+  the way Link Shell Extension does. Hardlink Clone, Symlink Clone and
+  Smart Copy used to bail out with "Target directory already exists"
+  whenever they were called with a destination that was taken, which is
+  what `--hardlink-clone`, `--symlink-clone` and `--smart-copy` did every
+  time: collision handling lived in the drop menu's caller, not in the
+  operations. It now lives in the operations, so every entry point gets it.
+  Names are also claimed atomically (`mkdir`/`symlink`/`link` with `O_EXCL`
+  semantics) rather than checked and then created, so a dangling symlink or
+  a file appearing mid-drop no longer surfaces as a raw `EEXIST`.
+- **Changed:** Smart Copy's renamed output is now `name - Smart Copy`
+  instead of `name - Copy`, matching its menu entry and the other drops.
+- **Fixed:** a folder with a dot in its name was renamed as though the dot
+  started an extension, turning `v1.2` into `v1 - Symlink.2`. Folders keep
+  their whole name.
+- **Fixed:** cloning or smart-copying a folder into itself walked into the
+  clone as it was being written.
+- **Fixed:** `--hardlink-clone` and `--symlink-clone` treated the folder
+  they prompt for as the clone itself, so accepting the default (the
+  source's own parent) always failed. They now clone into that folder, like
+  `--smart-copy` and the drop menu already did.
 - **Security: replaced pkexec-on-a-user-script elevation with a KAuth
   helper.** Dropping a hardlink/symlink into a directory you can't write to
   now prompts via polkit through a small, root-owned, D-Bus-activated

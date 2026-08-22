@@ -84,7 +84,7 @@ Destination directory for a drop operation.
 \fB\-\-hardlink-clone\fR
 Clone a picked source directory, hardlinking regular files and recreating
 the directory/symlink structure. Requires exactly one picked directory;
-prompts interactively for the destination.
+prompts interactively for the folder to clone into.
 .TP
 \fB\-\-symlink-clone\fR
 Same as \fB\-\-hardlink-clone\fR but symlinks files instead of hardlinking them.
@@ -93,7 +93,13 @@ Same as \fB\-\-hardlink-clone\fR but symlinks files instead of hardlinking them.
 Copy a picked file or directory, preserving internal hardlink and symlink
 structure (an internal hardlink stays a hardlink in the copy, not two
 independent files). Requires exactly one picked source; prompts
-interactively for the destination.
+interactively for the folder to copy into.
+.SS Name collisions
+Every drop and clone renames rather than overwriting or failing when the
+name is already used in the destination: \fBname \- Hardlink.ext\fR, then
+\fBname \- Hardlink (2).ext\fR, using the first number free in that folder.
+The suffix follows the operation \(em \fB\- Symlink\fR, \fB\- Hardlink Clone\fR,
+\fB\- Symlink Clone\fR, \fB\- Smart Copy\fR. Directories keep their whole name.
 .TP
 \fB\-\-link-properties\fR
 Show reference count, inode, device, and hardlink sibling paths for \fBfiles\fR

@@ -236,14 +236,16 @@ def handle_hardlink_clone(files: list[str]):
         ui.error_dialog("Hardlink Clone", "Please select exactly one directory.")
         return
     
-    # Ask for target directory
+    # The prompt asks for the folder to clone *into*, so the clone itself lands
+    # at <target>/<source name> -- renamed to "<name> - Hardlink Clone" if that
+    # name is taken. Same shape as Drop Link As > Hardlink Clone.
     target = ui.input_dialog(
         "Hardlink Clone",
-        "Enter target directory path:",
+        "Destination folder:",
         str(Path(files[0]).parent)
     )
     if target:
-        link_ops.hardlink_clone(files[0], target)
+        link_ops.hardlink_clone(files[0], str(Path(target) / Path(files[0]).name))
 
 
 def handle_symlink_clone(files: list[str]):
@@ -254,11 +256,11 @@ def handle_symlink_clone(files: list[str]):
     
     target = ui.input_dialog(
         "Symlink Clone",
-        "Enter target directory path:",
+        "Destination folder:",
         str(Path(files[0]).parent)
     )
     if target:
-        link_ops.symlink_clone(files[0], target)
+        link_ops.symlink_clone(files[0], str(Path(target) / Path(files[0]).name))
 
 
 def handle_smart_copy(files: list[str]):
@@ -269,7 +271,7 @@ def handle_smart_copy(files: list[str]):
     
     target = ui.input_dialog(
         "Smart Copy",
-        "Enter target directory path:",
+        "Destination folder:",
         str(Path(files[0]).parent)
     )
     if target:
