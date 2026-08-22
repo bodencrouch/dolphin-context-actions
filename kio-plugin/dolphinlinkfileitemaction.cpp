@@ -229,15 +229,17 @@ private:
     }
 
     // Same "name - Symlink (2).ext" / "name - Hardlink (2)" convention as the
-    // unprivileged Python path (link_ops.py's _auto_rename_path/_auto_rename_dir),
-    // so a collision looks the same to the user whether or not root was needed.
-    static QString candidateLeafName(const QString &sourceName, const QString &kind, int attempt)
+    // unprivileged Python path (link_ops.py's _candidate_leaf_name), so a
+    // collision looks the same to the user whether or not root was needed.
+    // splitExtension is false for directories: a folder called "v1.2" must
+    // stay "v1.2 - Symlink", not become "v1 - Symlink.2".
+    static QString candidateLeafName(const QString &sourceName, const QString &kind, int attempt, bool splitExtension)
     {
         if (attempt == 0) {
             return sourceName;
         }
         const int dot = sourceName.lastIndexOf(QLatin1Char('.'));
-        const bool hasExtension = dot > 0;
+        const bool hasExtension = splitExtension && dot > 0;
         const QString stem = hasExtension ? sourceName.left(dot) : sourceName;
         const QString suffix = hasExtension ? sourceName.mid(dot) : QString();
         if (attempt == 1) {
@@ -274,13 +276,15 @@ private:
         }
 
         const QString &source = sources.at(sourceIndex);
-        const QString sourceName = QFileInfo(source).fileName();
+        const QFileInfo sourceInfo(source);
+        const QString sourceName = sourceInfo.fileName();
         const QString kind = mode == QStringLiteral("hardlink") ? tr("Hardlink") : tr("Symlink");
-        tryElevatedAttempt(mode, source, sourceName, kind, targetDir, sources, sourceIndex, 0);
+        tryElevatedAttempt(mode, source, sourceName, kind, targetDir, sources, sourceIndex, 0, !sourceInfo.isDir());
     }
 
     void tryElevatedAttempt(const QString &mode, const QString &source, const QString &sourceName, const QString &kind,
-                            const QString &targetDir, const QStringList &sources, int sourceIndex, int attempt)
+                            const QString &targetDir, const QStringList &sources, int sourceIndex, int attempt,
+                            bool splitExtension)
     {
         // 50 collisions in one directory is already absurd; treat it as a stuck
         // loop rather than retrying forever.
@@ -289,7 +293,7 @@ private:
             return;
         }
 
-        const QString leafName = candidateLeafName(sourceName, kind, attempt);
+        const QString leafName = candidateLeafName(sourceName, kind, attempt, splitExtension);
         const QString actionId = QStringLiteral("io.github.bodencrouch.linkhelper.create%1").arg(mode);
 
         KAuth::Action kauthAction(actionId);
@@ -312,7 +316,8 @@ private:
         kauthAction.setArguments(args);
 
         KAuth::ExecuteJob *job = kauthAction.execute();
-        connect(job, &KJob::result, this, [this, job, mode, source, sourceName, kind, targetDir, sources, sourceIndex, attempt]() {
+        connect(job, &KJob::result, this,
+                [this, job, mode, source, sourceName, kind, targetDir, sources, sourceIndex, attempt, splitExtension]() {
             if (!job->error()) {
                 runElevated(mode, sources, targetDir, sourceIndex + 1);
                 return;
@@ -320,7 +325,7 @@ private:
 
             const QString errorText = job->errorString();
             if (errorText.contains(QStringLiteral("EEXIST"))) {
-                tryElevatedAttempt(mode, source, sourceName, kind, targetDir, sources, sourceIndex, attempt + 1);
+                tryElevatedAttempt(mode, source, sourceName, kind, targetDir, sources, sourceIndex, attempt + 1, splitExtension);
                 return;
             }
 
