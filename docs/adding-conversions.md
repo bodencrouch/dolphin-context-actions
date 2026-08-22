@@ -3,6 +3,11 @@
 The conversion catalog lives in a YAML file. After you edit it, run
 `make install-menus-only` to regenerate Dolphin's context menus.
 
+> Registries load from YAML or JSON. The package installed through Dolphin's
+> *Download New Services…* dialog ships the catalog pre-converted to
+> `conversions.json` so it runs without PyYAML; your own overrides can use
+> either format.
+
 Your live copy is at:
 
 ```

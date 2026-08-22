@@ -1,0 +1,26 @@
+{
+  "product": {
+    "name": "Dolphin Context Actions",
+    "summary": "Convert files from the right-click menu.",
+    "category_id": 102,
+    "category_name": "Dolphin Service Menus",
+    "license": "MIT",
+    "homepage": "https://github.com/bodencrouch/dolphin-context-actions",
+    "issues": "https://github.com/bodencrouch/dolphin-context-actions/issues",
+    "tags": [
+      "dolphin", "servicemenu", "converter", "ffmpeg", "video", "audio",
+      "gif", "pdf", "imgur", "kde", "plasma", "context-menu"
+    ],
+    "description_file": "description.txt",
+    "preview_images": [
+      "../../promo/preview-1-hero.png",
+      "../../promo/preview-2-menu.png",
+      "../../promo/preview-3-formats.png"
+    ],
+    "payload": "dist/dolphin-context-actions-servicemenu-v<version>.tar.gz"
+  },
+  "notes": {
+    "dialog_placement": "Dolphin lists category 102 products in Settings > Configure Dolphin > Context Menu > Download New Services",
+    "ranking_factors": "The dialog sorts by rating and downloads; the first description line and first preview image are what users see in the list"
+  }
+}

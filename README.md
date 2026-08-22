@@ -1,8 +1,14 @@
 # Dolphin Context Actions
 
+[![CI](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/ci.yml/badge.svg)](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/ci.yml)
+[![Release](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/release-please.yml/badge.svg)](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/release-please.yml)
+[![KDE Store](https://img.shields.io/badge/KDE%20Store-Dolphin%20Service%20Menus-3daee9)](https://store.kde.org/browse?cat=102)
+
 Adds file conversion, media tools, and link actions to Dolphin's right-click menu.
 
 Right-click a supported file to see the actions that apply to it.
+
+![Convert files from the right-click menu](promo/demo.gif)
 
 ## How it works
 
@@ -53,6 +59,26 @@ The context menu follows the stateful flow from [Link Shell Extension](https://s
 - Failed drops keep the source so you can retry.
 
 ## Installation
+
+### From Dolphin itself (easiest)
+
+Dolphin can install this without a terminal:
+
+1. Open **Settings → Configure Dolphin → Context Menu**.
+2. Click **Download New Services…**.
+3. Search for **Dolphin Context Actions** and click **Install**.
+
+That downloads a small package from [store.kde.org](https://store.kde.org)
+and runs its installer as you — no root, no pip. Everything lands under your
+home directory (`~/.local/share/dolphin-context-actions/` plus the service
+menus) and the same dialog uninstalls it again. The conversion menus are
+generated on your machine, so they list only what your installed tools
+(ffmpeg, LibreOffice, pandoc, …) can actually do.
+
+The store package covers the conversion features. The Link Shell Extension
+plugin is compiled code and still needs a source build (below).
+
+### Every other method
 
 See [INSTALL.md](INSTALL.md) for every available method:
 
@@ -237,6 +263,19 @@ for any Python project.
 └── man/
     └── dolphin-context-actions.1
 ```
+
+## Building the store package
+
+`scripts/build-ghns-package.sh` builds the archive that store.kde.org
+serves to Dolphin's Download New Services dialog; `tests/test_ghns_package.sh`
+installs it into a throwaway `$HOME` and verifies the whole
+install/run/uninstall cycle. Releases are cut by release-please and the
+package is attached to each GitHub release automatically — see
+[packaging/pling/PUBLISHING.md](packaging/pling/PUBLISHING.md) for how the
+store product is created and updated.
+
+If this saved you a trip to a sketchy online converter, a rating on the
+store page helps other people find it.
 
 ## Building packages
 

@@ -43,6 +43,20 @@ running keeps the previously-loaded plugin in memory (a new `.so` on disk
 doesn't get picked up by an existing process). `killall dolphin` after
 `make install-plugin`, not just after `.desktop` changes.
 
+## Store package and CI
+
+- `ghns/install.sh` — installer bundled in the archive that Dolphin's
+  *Download New Services…* dialog runs (user-scope, no root, no pip).
+- `scripts/build-ghns-package.sh` — builds that archive; converts the
+  registry to JSON so the vendored runtime needs no PyYAML.
+- `tests/test_ghns_package.sh` — installs the archive into a throwaway
+  `$HOME` and checks the full install/run/uninstall cycle.
+- `scripts/publish-to-pling.sh` — pushes a release payload to the
+  store.kde.org product (see `packaging/pling/PUBLISHING.md`).
+- `promo/generate.py` — renders the store preview images and demo GIF.
+- `.github/workflows/` — CI (pytest matrix, shellcheck, package test,
+  KF6 plugin build in a Fedora container) and release-please releases.
+
 ## Project layout
 
 ```
