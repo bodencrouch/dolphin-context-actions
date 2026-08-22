@@ -36,25 +36,45 @@ class Conversion:
     icon: str = "document-convert"
 
 
-def load_yaml(path: Path) -> dict:
+def load_registry_file(path: Path) -> dict:
+    """Load a registry from YAML or JSON.
+
+    JSON needs only the standard library, which is what lets the package run
+    when installed from Dolphin's "Download New Services" dialog -- that
+    installer runs as the user with no way to pull in PyYAML. The build step
+    for that package converts the canonical conversions.yaml to JSON, so a
+    .json sibling is tried before giving up on a YAML file.
+    """
+    if path.suffix == ".json":
+        return json.loads(path.read_text(encoding="utf-8")) or {}
     try:
         import yaml
     except ImportError as exc:
+        sibling = path.with_suffix(".json")
+        if sibling.exists():
+            return json.loads(sibling.read_text(encoding="utf-8")) or {}
         raise RuntimeError(
-            "PyYAML is required. Install with: pip install PyYAML"
+            "PyYAML is required to read YAML registries. "
+            "Install with: pip install PyYAML (or provide a .json registry)"
         ) from exc
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
+# Kept for callers and tests that predate JSON support.
+load_yaml = load_registry_file
+
+
 def registry_path() -> Path:
-    for candidate in (CONFIG_FILE, SYSTEM_REGISTRY, BUNDLED_REGISTRY):
+    candidates = []
+    for base in (CONFIG_FILE, SYSTEM_REGISTRY, BUNDLED_REGISTRY):
+        candidates.append(base)
+        candidates.append(base.with_suffix(".json"))
+    for candidate in candidates:
         if candidate.exists():
             return candidate
     raise FileNotFoundError(
         "Conversion registry not found. Expected one of:\n"
-        f"  {CONFIG_FILE}\n"
-        f"  {SYSTEM_REGISTRY}\n"
-        f"  {BUNDLED_REGISTRY}"
+        + "\n".join(f"  {c}" for c in candidates)
     )
 
 

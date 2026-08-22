@@ -1,0 +1,39 @@
+Convert files from the right-click menu.
+
+Select a file in Dolphin, right-click, pick a format. No app to open, no
+upload site, no terminal. The file you started with is never touched — a
+converted copy appears next to it.
+
+WHAT YOU GET
+
+• Convert — one submenu per file type, built from what is installed on
+  your machine:
+  – Video: MP4, WebM, MKV, GIF (with quality presets)
+  – Audio: MP3, OGG, FLAC, WAV, M4A, OPUS, ALAC
+  – Images: PNG, JPG, WebP, HEIC
+  – Documents: PDF, DOCX, ODT, PPTX, XLSX, RTF → PDF; PDF → Markdown
+  – Data: JSON ↔ YAML ↔ CSV ↔ TOML
+• Extract audio from any video.
+• Upload images and clips to Imgur, link on your clipboard.
+• A "More…" picker with every conversion your machine supports —
+  24 built in, extendable with a small config file.
+
+NEVER LOSE A FILE
+
+Output names never overwrite anything. Converting song.wav where song.mp3
+exists gives you "song (2).mp3".
+
+INSTALL
+
+Click Install here, or in Dolphin: Settings → Configure Dolphin → Context
+Menu → Download New Services. Everything stays in your home directory.
+Uninstall removes every file it added.
+
+Media conversions use ffmpeg; document conversions use the tools you have
+(LibreOffice, pandoc). Missing something? The menu tells you what to
+install.
+
+Bonus for power users: the project also ships a Link Shell Extension for
+Dolphin (hardlinks, symlinks, hardlink clones — like the Windows tool) as a
+compiled plugin. That part needs a source build:
+https://github.com/bodencrouch/dolphin-context-actions
