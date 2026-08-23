@@ -25,6 +25,22 @@
 - **Fixed:** five negated `grep` assertions in the plugin menu test were
   inert under `set -e` and could never fail.
 
+## [0.2.0](https://github.com/bodencrouch/dolphin-context-actions/compare/v0.1.0...v0.2.0) (2026-08-23)
+
+
+### Features
+
+* rename dropped links on collision instead of failing ([44dfe9f](https://github.com/bodencrouch/dolphin-context-actions/commit/44dfe9fbb220f5692ca628e6fec890d29608efd9))
+* ship as a Dolphin "Download New Services" package with full CI/CD ([f3fe407](https://github.com/bodencrouch/dolphin-context-actions/commit/f3fe407b545a02c74f7ab4e0960bfed80b89cf8a))
+* unify Dolphin file conversion actions ([#1](https://github.com/bodencrouch/dolphin-context-actions/issues/1)) ([6292ed1](https://github.com/bodencrouch/dolphin-context-actions/commit/6292ed11d586975bcec3727edf8d3f4760e3ea53))
+
+
+### Bug Fixes
+
+* don't crash or hang when notify-send/kdialog are missing ([26cbeb2](https://github.com/bodencrouch/dolphin-context-actions/commit/26cbeb2a1902357b0f913a2fd72cd6c924b9b038))
+* harden media converters against real ffmpeg/encoder failures ([d42030c](https://github.com/bodencrouch/dolphin-context-actions/commit/d42030c4a021eec8faecd619d4f0cb480077f2d9))
+* support Python 3.10 by making tomllib a soft dependency ([a6dcab8](https://github.com/bodencrouch/dolphin-context-actions/commit/a6dcab887730d7093df23200df346408e869176c))
+
 ## 0.1.0 (2026-08-22)
 
 - **Dropping onto a name that is already taken now renames instead of
