@@ -11,7 +11,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -334,6 +333,16 @@ def convert_toml_json(source: Path, target: Path) -> None:
     target_ext = target.suffix.lower()
 
     if source_ext == ".toml" and target_ext == ".json":
+        try:
+            import tomllib
+        except ModuleNotFoundError:  # Python < 3.11
+            try:
+                import tomli as tomllib
+            except ModuleNotFoundError as exc:
+                raise RuntimeError(
+                    "Reading TOML requires Python 3.11+ or the 'tomli' package. "
+                    "Install with: pip install tomli"
+                ) from exc
         data = tomllib.loads(source.read_text(encoding="utf-8"))
         target.write_text(
             json.dumps(data, indent=2, ensure_ascii=False) + "\n",

@@ -2,7 +2,10 @@ import re
 import unittest
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    import tomli as tomllib
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLUGIN_SOURCE = REPO_ROOT / "kio-plugin" / "dolphinlinkfileitemaction.cpp"

@@ -29,7 +29,10 @@ classifiers = [
   "Topic :: Multimedia :: Video :: Conversion",
 ]
 
-dependencies = ["PyYAML>=6"]
+dependencies = [
+  "PyYAML>=6",
+  "tomli>=2; python_version < '3.11'",
+]
 
 [project.urls]
 Homepage = "https://github.com/bodencrouch/dolphin-context-actions"
