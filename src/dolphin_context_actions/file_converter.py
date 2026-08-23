@@ -10,6 +10,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -147,19 +148,33 @@ def load_conversions(*, available_only: bool = False) -> list[Conversion]:
 
 
 def kdialog(*args: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["kdialog", *args],
-        capture_output=True,
-        text=True,
-        env=os.environ.copy(),
-    )
+    try:
+        return subprocess.run(
+            ["kdialog", *args],
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+    except OSError as exc:
+        # kdialog is absent on headless systems (CI, servers). Callers only
+        # inspect returncode/stdout, so hand back a failed result instead of
+        # crashing mid-conversion.
+        print(f"kdialog unavailable: {exc}", file=sys.stderr)
+        return subprocess.CompletedProcess(["kdialog", *args], 1, "", str(exc))
 
 
 def notify(title: str, message: str, icon: str = "document-convert") -> None:
-    subprocess.run(
-        ["notify-send", "-i", icon, "-a", APP_NAME, title, message],
-        capture_output=True,
-    )
+    # Fire and forget: notify-send blocks indefinitely with no notification
+    # daemon and is absent entirely on headless systems. A conversion that
+    # succeeded must not crash or hang while announcing it.
+    try:
+        subprocess.Popen(
+            ["notify-send", "-i", icon, "-a", APP_NAME, title, message],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except OSError:
+        pass
 
 
 def kdialog_error(message: str) -> None:
