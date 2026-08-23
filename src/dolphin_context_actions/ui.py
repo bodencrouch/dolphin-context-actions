@@ -10,12 +10,18 @@ QDBUS = next(
 
 
 def kdialog(*args) -> subprocess.CompletedProcess:
-    r = subprocess.run(
-        ["kdialog"] + list(args),
-        capture_output=True,
-        text=True,
-        env=os.environ.copy(),
-    )
+    try:
+        r = subprocess.run(
+            ["kdialog"] + list(args),
+            capture_output=True,
+            text=True,
+            env=os.environ.copy(),
+        )
+    except OSError as exc:
+        # Absent on headless systems; callers inspect returncode/stdout, so
+        # return a failed result instead of crashing.
+        print(f"kdialog unavailable: {exc}. Args: {args}", file=sys.stderr)
+        return subprocess.CompletedProcess(["kdialog", *args], 1, "", str(exc))
     if r.returncode != 0 and not shutil.which("kdialog"):
         print(f"kdialog not found. Args: {args}", file=sys.stderr)
     return r
