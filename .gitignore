@@ -4,3 +4,9 @@ __pycache__/
 *.egg-info/
 /dist/
 /promo/src/
+.claude/
+.cursor/
+.mission/
+.remember/
+AGENTS.md
+CLAUDE.md
