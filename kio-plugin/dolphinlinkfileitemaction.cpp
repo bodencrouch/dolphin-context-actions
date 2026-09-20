@@ -208,7 +208,7 @@ private:
         return first.isDir() ? first.absoluteFilePath() : first.absolutePath();
     }
 
-    // Keep in sync with the [project.scripts] entry point in pyproject.toml.
+    // Keep in sync with the Cargo.toml [[bin]] entry point.
     static QString helperName()
     {
         return QStringLiteral("dolphin-context-actions");

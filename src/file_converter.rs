@@ -314,16 +314,33 @@ pub fn convert_pandoc(source: &Path, target: &Path) -> Result<(), String> {
     Ok(())
 }
 
+fn csv_cell_to_json(cell: &str) -> Value {
+    if let Ok(n) = cell.parse::<i64>() {
+        return Value::from(n);
+    }
+    if let Ok(n) = cell.parse::<f64>() {
+        return Value::from(n);
+    }
+    Value::from(cell)
+}
+
 pub fn convert_csv_json(source: &Path, target: &Path) -> Result<(), String> {
     let source_ext = source.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
     let target_ext = target.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
 
     if source_ext == "csv" && target_ext == "json" {
         let mut reader = csv::Reader::from_path(source).map_err(|e| e.to_string())?;
-        let rows: Vec<serde_json::Map<String, Value>> = reader
-            .deserialize()
-            .collect::<Result<_, _>>()
-            .map_err(|e| e.to_string())?;
+        let headers = reader.headers().map_err(|e| e.to_string())?.clone();
+        let mut rows = Vec::new();
+        for record in reader.records() {
+            let record = record.map_err(|e| e.to_string())?;
+            let mut obj = serde_json::Map::new();
+            for (idx, header) in headers.iter().enumerate() {
+                let cell = record.get(idx).unwrap_or("");
+                obj.insert(header.to_string(), csv_cell_to_json(cell));
+            }
+            rows.push(obj);
+        }
         let json = serde_json::to_string_pretty(&rows).map_err(|e| e.to_string())?;
         fs::write(target, format!("{json}\n")).map_err(|e| e.to_string())?;
         return Ok(());
