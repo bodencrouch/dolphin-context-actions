@@ -24,6 +24,8 @@ mkdir -p "$fake_home/.local/share/servicemenu-download"
 tar -xzf "$tarball" -C "$fake_home/.local/share/servicemenu-download"
 pkg_dir="$(echo "$fake_home"/.local/share/servicemenu-download/dolphin-context-actions-servicemenu-v*)"
 [ -f "$pkg_dir/install.sh" ]
+[ -x "$pkg_dir/dolphin-context-actions" ]
+[ ! -d "$pkg_dir/dolphin_context_actions" ]
 
 run_installer() {
     HOME="$fake_home" XDG_DATA_HOME="$fake_home/.local/share" \
@@ -39,8 +41,6 @@ launcher="$app_dir/dolphin-context-actions"
 
 [ -x "$launcher" ] || { echo "FAIL: launcher missing/not executable"; exit 1; }
 [ -f "$app_dir/installed-files.txt" ] || { echo "FAIL: manifest missing"; exit 1; }
-[ -f "$app_dir/dolphin_context_actions/conversions.json" ] \
-    || { echo "FAIL: JSON registry missing"; exit 1; }
 
 step "static service menus installed, Exec rewritten to absolute launcher"
 for menu in dolphin-context-actions.desktop dolphin-audio-converter.desktop; do
@@ -58,20 +58,6 @@ echo "$listing" | grep -q "pdf-to-md" || { echo "FAIL: CLI listing wrong"; exit 
 count="$(echo "$listing" | wc -l)"
 [ "$count" -ge 20 ] || { echo "FAIL: only $count conversions listed"; exit 1; }
 echo "   CLI lists $count conversions"
-
-step "the vendored runtime works without PyYAML on sys.path"
-HOME="$fake_home" python3 - "$app_dir" <<'PY'
-import sys, types
-
-app_dir = sys.argv[1]
-# Simulate a machine with no PyYAML: poison the import before any code runs.
-sys.modules["yaml"] = None  # import yaml -> ImportError
-sys.path.insert(0, app_dir)
-from dolphin_context_actions import file_converter
-conversions = file_converter.load_conversions(available_only=False)
-assert len(conversions) >= 20, len(conversions)
-print(f"   registry loads {len(conversions)} conversions with PyYAML blocked")
-PY
 
 step "generated Convert menus (if this machine has any tools)"
 gen_count="$(find "$menu_dir" -name 'dolphin-context-actions-convert-*.desktop' | wc -l)"

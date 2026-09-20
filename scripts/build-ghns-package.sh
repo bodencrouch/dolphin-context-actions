@@ -12,11 +12,8 @@ set -euo pipefail
 repo="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 out_dir="${1:-$repo/dist}"
 
-version="$(python3 -c "
-import tomllib
-with open('$repo/pyproject.toml', 'rb') as f:
-    print(tomllib.load(f)['project']['version'])
-")"
+version="$(grep '^version' "$repo/Cargo.toml" | head -n1 | sed -n 's/^version = "\(.*\)"/\1/p')"
+[ -n "$version" ] || { echo "Could not read version from Cargo.toml" >&2; exit 1; }
 
 name="dolphin-context-actions-servicemenu-v${version}"
 stage="$(mktemp -d)"
@@ -24,16 +21,17 @@ trap 'rm -rf "$stage"' EXIT
 root="$stage/$name"
 mkdir -p "$root"
 
-# 1. The Python package, minus caches. conversions.yaml stays in as the
-#    human-readable reference; conversions.json (generated below) is what the
-#    no-PyYAML runtime actually loads.
-mkdir -p "$root/dolphin_context_actions"
-(cd "$repo/src/dolphin_context_actions" && find . -type f \
-    ! -path '*/__pycache__/*' ! -name '*.pyc' -print0 \
-    | tar --null -cf - --files-from=-) | tar -xf - -C "$root/dolphin_context_actions"
+# 1. Release binary. The store archive cannot compile Rust on the user's
+#    machine, so the Linux helper ships prebuilt.
+(cd "$repo" && cargo build --release)
+cp "$repo/target/release/dolphin-context-actions" "$root/dolphin-context-actions"
+chmod 0755 "$root/dolphin-context-actions"
 
-python3 - "$repo/src/dolphin_context_actions/conversions.yaml" \
-          "$root/dolphin_context_actions/conversions.json" <<'PY'
+# 2. Registry: YAML always; JSON when PyYAML is available. The binary embeds
+#    the registry and can load either format from disk.
+cp "$repo/assets/conversions.yaml" "$root/conversions.yaml"
+if python3 -c "import json,sys,yaml" >/dev/null 2>&1; then
+    python3 - "$repo/assets/conversions.yaml" "$root/conversions.json" <<'PY'
 import json, sys
 import yaml
 src, dst = sys.argv[1], sys.argv[2]
@@ -43,8 +41,9 @@ with open(dst, "w", encoding="utf-8") as f:
     json.dump(data, f, indent=1, sort_keys=True)
     f.write("\n")
 PY
+fi
 
-# 2. Service menus + installer + license.
+# 3. Service menus + installer + license.
 mkdir -p "$root/servicemenus"
 cp "$repo"/servicemenus/*.desktop "$root/servicemenus/"
 cp "$repo/ghns/install.sh" "$root/install.sh"
@@ -66,7 +65,7 @@ Everything goes under your home directory only:
   ~/.local/bin/dolphin-context-actions      (command-line launcher)
 EOF
 
-# 3. Sanity checks before anything is shipped.
+# 4. Sanity checks before anything is shipped.
 bash -n "$root/install.sh"
 if command -v shellcheck >/dev/null 2>&1; then
     shellcheck "$root/install.sh"
@@ -89,15 +88,24 @@ for path in sys.argv[1:]:
         assert section.get("Exec") or action == "configure", f"{path}: {action} has no Exec"
     print(f"ok: {path} ({len(actions)} actions)")
 PY
-python3 -c "
-import json, sys
-data = json.load(open('$root/dolphin_context_actions/conversions.json'))
+
+listing="$("$root/dolphin-context-actions" --list-file-conversions)"
+count="$(printf '%s\n' "$listing" | wc -l)"
+printf '%s\n' "$listing" | grep -q "pdf-to-md"
+[ "$count" -ge 20 ]
+echo "ok: bundled binary lists ${count} conversions"
+
+if [ -f "$root/conversions.json" ]; then
+    python3 -c "
+import json
+data = json.load(open('$root/conversions.json'))
 count = len(data['conversions'])
 assert count > 0
 print(f'ok: conversions.json ({count} conversions)')
 "
+fi
 
-# 4. Deterministic tarball.
+# 5. Deterministic tarball.
 mkdir -p "$out_dir"
 epoch="${SOURCE_DATE_EPOCH:-$(git -C "$repo" log -1 --format=%ct 2>/dev/null || date +%s)}"
 tar -C "$stage" \
