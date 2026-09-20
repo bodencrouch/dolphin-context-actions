@@ -81,7 +81,7 @@ Dolphin can install this without a terminal:
 3. Search for **Dolphin Context Actions** and click **Install**.
 
 That downloads a small package from [store.kde.org](https://store.kde.org)
-and runs its installer as you — no root, no pip. Everything lands under your
+and runs its installer as you — no root, no cargo. Everything lands under your
 home directory (`~/.local/share/dolphin-context-actions/` plus the service
 menus) and the same dialog uninstalls it again. The conversion menus are
 generated on your machine, so they list only what your installed tools
@@ -96,16 +96,17 @@ See [INSTALL.md](INSTALL.md) for every available method:
 
 | Method | Command |
 |---|---|
-| pipx | `pipx install dolphin-context-actions` |
-| uvx | `uvx dolphin-context-actions` |
-| pip (user) | `pip install --user dolphin-context-actions` |
+| From source | `make install` (needs rustc/cargo) |
+| GHNS | Download New Services (ships a prebuilt helper) |
 | Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
 | Fedora/openSUSE | `sudo rpm -i dolphin-context-actions-0.1.0-1.noarch.rpm` |
 | Arch Linux | `makepkg -si` (from packaging/arch/) |
 | Snap | `snap install dolphin-context-actions` |
 | Flatpak | `flatpak install io.github.bodencrouch.dolphin-context-actions` |
 | AppImage | Download and run from releases |
-| From source | `make install` |
+
+pipx, uvx, and `pip install` are gone on this branch. The helper is a
+Rust binary.
 
 Only the source install (`make install` / `install.sh`) currently builds
 `kio-plugin/`, so it's the only method that provides the Link Shell
@@ -155,13 +156,12 @@ The editable conversion catalog is stored beside it as `conversions.yaml`.
 
 ## Requirements
 
-- **Python 3.10+**
+- **Rust 1.75+ (cargo)** (from-source builds; GHNS ships a prebuilt helper)
 - **ffmpeg** (≥ 4.4) with ffprobe (for media conversion only)
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
 - **KIO 6** (for the root context-menu plugins)
 - **7zip** and **Ark** (for the Archive submenu)
-- **PyYAML 6+** (for the conversion catalog)
 
 Some conversions need extra tools. The installer only adds menu actions whose
 dependencies are available. See [Adding conversions](docs/adding-conversions.md)
@@ -187,12 +187,12 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
   way to install a system D-Bus service or polkit action from inside a
   Flatpak/Snap confinement. Those formats ship the media-conversion CLI and
   service menus only.
-- **rpm / deb / Arch packages** — these currently package the Python CLI and
+- **rpm / deb / Arch packages** — these still package the old Python CLI and
   service menus only; none of them build `kio-plugin/` yet either, so the
   Link Shell Extension features (Pick Link Source / Drop Link As) and the
   Archive submenu aren't available from the packaged builds at all right now.
   `install.sh` / `make install`, run from a source checkout, is the only
-  path that builds and installs the plugins and the KAuth helper today.
+  path that builds the Rust helper, the plugins, and the KAuth helper today.
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
@@ -234,28 +234,27 @@ directories, which today only `install.sh` / `make install` do — see
 [Limitations](#link-shell-extension-on-linux) above for which install
 methods currently build `kio-plugin/` at all.
 
-**If you ever install this project's Python package as root** (`sudo pip
-install`, `pkexec pip install --user -e .`) — don't; it isn't needed, since
-`install.sh`/`make install` already call `sudo` only for the one step that
-requires it, and refuse to run under `sudo` themselves. If it happens anyway,
-run `scripts/check-privileged-pth.py --fix` (or `make doctor`). Editable
+Older checkouts shipped a Python package. If you ever installed that as
+root (`sudo pip install`, `pkexec pip install --user -e .`), run
+`scripts/check-privileged-pth.py --fix` (or `make doctor`). Editable
 installs write a `.pth` file into site-packages that adds this checkout's
-`src/` directory to `sys.path`; done as root, that `.pth` file ends up
+old `src/` directory to `sys.path`; done as root, that `.pth` file ends up
 root-owned while still pointing at a directory your normal user can write to,
 which means anything that can write there gets code run as root the next time
-anything does `sudo python3` / `pkexec ... python3`. This isn't specific to
-this project — it's a general hazard of editable pip installs run as root,
-for any Python project.
+anything does `sudo python3` / `pkexec ... python3`. Current installs use
+`cargo install` and do not write `.pth` files. `install.sh`/`make install`
+still call `sudo` only for the plugin step, and refuse to run under `sudo`
+themselves.
 
 ## Project structure
 
 ```
-├── pyproject.toml              # Python package definition
+├── Cargo.toml                  # Rust crate
 ├── Makefile                    # Build/install/uninstall
 ├── install.sh                  # Manual install script
 ├── kio-plugin/                 # Context-menu plugins + KAuth privileged-link helper
 ├── scripts/
-│   └── check-privileged-pth.py # Scan for root-owned .pth files pointing at user-writable dirs
+│   └── check-privileged-pth.py # Scan leftover root-owned .pth files from old pip installs
 ├── debian/                     # Debian packaging
 ├── packaging/
 │   ├── rpm/                    # RPM spec
@@ -266,19 +265,23 @@ for any Python project.
 ├── servicemenus/
 │   ├── dolphin-context-actions.desktop         # Smart menu (all media)
 │   └── dolphin-audio-converter.desktop         # Dedicated audio submenu
-├── src/dolphin_context_actions/
-│   ├── cli.py                  # CLI entry point + smart dispatch
-│   ├── file_converter.py       # Document, data, and image conversion engines
-│   ├── file_converter_menus.py # Generate conversion service menus
-│   ├── conversions.yaml        # Bundled conversion catalog
-│   ├── ui.py                   # kdialog progress bars / dialogs
-│   ├── config.py               # Config management
-│   ├── link_ops.py             # Link Shell Extension operations
-│   ├── archive_ops.py          # 7-Zip-style Archive menu operations
+├── assets/
+│   └── conversions.yaml        # Bundled conversion catalog
+├── src/
+│   ├── main.rs                 # CLI binary
+│   ├── lib.rs                  # crate root
+│   ├── cli.rs                  # CLI entry point + smart dispatch
+│   ├── file_converter.rs       # Document, data, and image conversion engines
+│   ├── file_converter_menus.rs # Generate conversion service menus
+│   ├── ui.rs                   # kdialog progress bars / dialogs
+│   ├── config.rs               # Config management
+│   ├── link_ops.rs             # Link Shell Extension operations
+│   ├── archive_ops.rs          # 7-Zip-style Archive menu operations
 │   ├── converters/
-│   │   ├── audio.py            # Audio transcoding (7 formats)
-│   │   └── video.py            # GIF/MP4/WebM/MKV + audio extraction
-│   └── uploaders.py            # Imgur upload
+│   │   ├── audio.rs            # Audio transcoding (7 formats)
+│   │   └── video.rs            # GIF/MP4/WebM/MKV + audio extraction
+│   ├── uploaders.rs            # Imgur upload
+│   └── bin/generate_menus.rs   # Menu-generation helper
 ├── docs/
 │   ├── CONFIGURATION.md        # Full config reference
 │   └── DEVELOPMENT.md          # Contributor guide
@@ -302,10 +305,6 @@ store page helps other people find it.
 ## Building packages
 
 ```bash
-# Python wheel
-pip install build
-python -m build
-
 # Debian .deb
 dpkg-buildpackage -us -uc
 
