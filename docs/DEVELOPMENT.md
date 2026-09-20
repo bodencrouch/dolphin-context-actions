@@ -5,23 +5,25 @@
 ```bash
 git clone https://github.com/bodencrouch/dolphin-context-actions.git
 cd dolphin-context-actions
-pip install -e .
+cargo test
+cargo install --path . --root ~/.local --force
 ```
 
-Never run `pip install -e .` (or the whole install as root/sudo/pkexec) —
+Never run the whole install as root/sudo/pkexec —
 see [`scripts/check-privileged-pth.py`](../scripts/check-privileged-pth.py)
-for why; `make install`/`install.sh` already call `sudo` themselves for the
+for the leftover hazard from old `pip install -e .` installs.
+`make install`/`install.sh` already call `sudo` themselves for the
 one step that needs it and refuse to run under `sudo`.
 
 Makefile targets for development:
 
 ```bash
-make install        # Install package + service menus + KIO plugin/KAuth helper
+make install        # cargo install + service menus + KIO plugin/KAuth helper
 make install-menus  # Install just the .desktop files
 make plugin-build   # Build the KIO plugin, KAuth helper, and probe
 make install-plugin # Install the KIO plugin + KAuth helper to system paths
 make uninstall      # Remove everything install added, including the KAuth helper
-make doctor         # Scan for root-owned .pth files pointing at user-writable dirs
+make doctor         # Scan for leftover root-owned .pth files from old pip installs
 ```
 
 After any change to the `.desktop` files, restart Dolphin:
@@ -46,34 +48,41 @@ doesn't get picked up by an existing process). `killall dolphin` after
 ## Store package and CI
 
 - `ghns/install.sh` — installer bundled in the archive that Dolphin's
-  *Download New Services…* dialog runs (user-scope, no root, no pip).
-- `scripts/build-ghns-package.sh` — builds that archive; converts the
-  registry to JSON so the vendored runtime needs no PyYAML.
+  *Download New Services…* dialog runs (user-scope, no root, no cargo).
+- `scripts/build-ghns-package.sh` — builds that archive; ships
+  `target/release/dolphin-context-actions` plus `assets/conversions.yaml`.
 - `tests/test_ghns_package.sh` — installs the archive into a throwaway
   `$HOME` and checks the full install/run/uninstall cycle.
 - `scripts/publish-to-pling.sh` — pushes a release payload to the
   store.kde.org product (see `packaging/pling/PUBLISHING.md`).
 - `promo/generate.py` — renders the store preview images and demo GIF.
-- `.github/workflows/` — CI (pytest matrix, shellcheck, package test,
+- `.github/workflows/` — CI (`cargo test`, shellcheck, package test,
   KF6 plugin build in a Fedora container) and release-please releases.
 
 ## Project layout
 
 ```
-src/dolphin_context_actions/
-├── __init__.py              # Package marker
-├── __main__.py              # `python -m dolphin_context_actions` support
-├── cli.py                   # CLI parser + smart menu dispatch
-├── config.py                # JSON config read/write
-├── ui.py                    # kdialog/qdbus progress bar helpers
-├── link_ops.py              # Link Shell Extension operations (hardlink/symlink/clone/copy)
-├── archive_ops.py           # 7-Zip-style Archive menu (extract/compress/hash)
-├── uploaders.py             # Imgur upload
+src/
+├── main.rs                  # CLI binary
+├── lib.rs                   # crate root
+├── cli.rs                   # CLI parser + smart menu dispatch
+├── config.rs                # JSON config read/write
+├── ui.rs                    # kdialog/qdbus progress bar helpers
+├── link_ops.rs              # Link Shell Extension operations (hardlink/symlink/clone/copy)
+├── archive_ops.rs           # 7-Zip-style Archive menu (extract/compress/hash)
+├── file_converter.rs        # Document, data, and image conversion engines
+├── file_converter_menus.rs  # Generate conversion service menus
+├── uploaders.rs             # Imgur upload
+├── bin/
+│   └── generate_menus.rs    # Menu-generation helper
 └── converters/
-    ├── __init__.py          # unique_output() -- auto-rename on collision
-    ├── ffmpeg_tools.py      # Resolves an ffmpeg binary against actual encoder support
-    ├── audio.py             # Audio transcoding (7 formats)
-    └── video.py             # GIF/MP4/WebM/MKV + audio extraction
+    ├── mod.rs               # unique_output() -- auto-rename on collision
+    ├── ffmpeg_tools.rs      # Resolves an ffmpeg binary against actual encoder support
+    ├── audio.rs             # Audio transcoding (7 formats)
+    └── video.rs             # GIF/MP4/WebM/MKV + audio extraction
+
+assets/
+└── conversions.yaml         # Bundled conversion catalog
 
 kio-plugin/
 ├── dolphinlinkfileitemaction.cpp        # Link context-menu plugin
@@ -84,14 +93,14 @@ kio-plugin/
 └── io.github.bodencrouch.linkhelper.actions  # KAuth/polkit action policy
 
 scripts/
-└── check-privileged-pth.py  # `make doctor` -- detects the pip-install-as-root hazard
+└── check-privileged-pth.py  # `make doctor` -- leftover pip-install-as-root check
 ```
 
 ## Adding a new audio format
 
-1. Add the preset to `AUDIO_PRESETS` in `src/dolphin_context_actions/converters/audio.py`
+1. Add the preset to `preset()` and `AUDIO_FORMATS` in `src/converters/audio.rs`
 2. Add a `[Desktop Action convertToXxx]` block to `servicemenus/dolphin-audio-converter.desktop`
-3. Add the format to the smart menu choices in `cli.py` (both `is_gif` and
+3. Add the format to the smart menu choices in `src/cli.rs` (both `is_gif` and
    `is_audio` sections)
 
 ## How the smart menu works
@@ -111,8 +120,7 @@ When `--smart-menu` is called:
 git tag v0.1.0
 git push --tags
 
-# Build all package formats
-python -m build                          # wheel + sdist
+# Build remaining package formats
 dpkg-buildpackage -us -uc                # .deb
 rpmbuild -ba packaging/rpm/dolphin-context-actions.spec  # .rpm
 
