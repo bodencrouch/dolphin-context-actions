@@ -28,6 +28,37 @@ grep -Fx 'Pick Link Source' <<<"$idle_output"
 if grep -Fx 'Drop Link As' <<<"$idle_output"; then exit 1; fi
 if grep -Fx 'Cancel Link Creation' <<<"$idle_output"; then exit 1; fi
 
+grep -Fx 'Archive' <<<"$idle_output"
+grep -Fx '  Add to archive...' <<<"$idle_output"
+grep -Fx '  Compress and email...' <<<"$idle_output"
+grep -Fx '  Add to "source.7z"' <<<"$idle_output"
+grep -Fx '  Compress to "source.7z" and email' <<<"$idle_output"
+grep -Fx '  Add to "source.zip"' <<<"$idle_output"
+grep -Fx '  Compress to "source.zip" and email' <<<"$idle_output"
+grep -Fx '  CRC SHA' <<<"$idle_output"
+grep -Fx '    CRC-32' <<<"$idle_output"
+grep -Fx '    SHA-256' <<<"$idle_output"
+grep -Fx '    *' <<<"$idle_output"
+grep -Fx '    SHA-256 -> source.txt.sha256' <<<"$idle_output"
+grep -Fx '    Test archive : Checksum' <<<"$idle_output"
+if grep -Fx '  Open archive' <<<"$idle_output"; then exit 1; fi
+if grep -Fx '  Extract Here' <<<"$idle_output"; then exit 1; fi
+
+# Empty zip EOCD. 7-Zip treats .zip as extractable and numbers the quick
+# compress targets to sample_2.* because sample.zip is already selected.
+printf 'PK\005\006\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0' > "${test_home}/work/sample.zip"
+zip_output="$(run_probe "${test_home}/work/sample.zip")"
+grep -Fx 'Archive' <<<"$zip_output"
+grep -Fx '  Open archive' <<<"$zip_output"
+grep -Fx '  Extract files...' <<<"$zip_output"
+grep -Fx '  Extract Here' <<<"$zip_output"
+grep -Fx '  Extract to "sample/"' <<<"$zip_output"
+grep -Fx '  Test archive' <<<"$zip_output"
+grep -Fx '  Add to "sample_2.7z"' <<<"$zip_output"
+grep -Fx '  Add to "sample_2.zip"' <<<"$zip_output"
+if grep -Fx '  Add to "sample.zip"' <<<"$zip_output"; then exit 1; fi
+if grep -Fx '  Add to "sample.7z"' <<<"$zip_output"; then exit 1; fi
+
 admin_idle_output="$(run_probe --admin "${test_home}/work/source.txt")"
 grep -Fx 'Pick Link Source' <<<"$admin_idle_output"
 if grep -Fx 'Drop Link As' <<<"$admin_idle_output"; then exit 1; fi

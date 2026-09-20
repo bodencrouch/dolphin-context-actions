@@ -10,12 +10,14 @@ dolphin-context-actions \- Media conversion and file-linking actions for Dolphin
 [\fI\,--target-dir DIR\/\fR]
 [\fI\,--hardlink-clone\/\fR | \fI\,--symlink-clone\/\fR | \fI\,--smart-copy\/\fR]
 [\fI\,--link-properties\/\fR] [\fI\,--enumerate-hardlinks\/\fR]
+[\fI\,--archive ACTION\/\fR]
 [\fI\,files...\/\fR]
 .SH DESCRIPTION
 \fBdolphin-context-actions\fR is the backend for Dolphin (KDE file manager)
 service menus and the \fBkio-plugin\fR context-menu plugin. It provides two
-independent feature sets: intelligent, context-aware media conversion, and
-Link Shell Extension-style hardlink/symlink operations.
+independent feature sets: intelligent, context-aware media conversion,
+Link Shell Extension-style hardlink/symlink operations, and a 7-Zip-style
+\fBArchive\fR submenu.
 .PP
 For media conversion, it detects the MIME type of the selected file and
 presents only relevant conversion options via kdialog dialogs, then runs
@@ -109,6 +111,14 @@ Show reference count, inode, device, and hardlink sibling paths for \fBfiles\fR
 List all hardlink siblings of \fBfiles\fR (exactly one file) found under its
 parent directory.
 .TP
+\fB\-\-archive\fR \fI\,ACTION\/\fR
+Run a 7-Zip-style action from the Archive context-menu plugin.
+Actions include \fBopen\fR, \fBextract\fR, \fBextract-here\fR,
+\fBextract-to\fR, \fBtest\fR, \fBcompress\fR, \fBcompress-email\fR,
+\fBcompress-to-7z\fR, \fBcompress-to-zip\fR, the matching \fB\-email\fR
+compress actions, \fBhash-sha256\fR (and the other CRC SHA methods),
+\fBhash-generate-sha256\fR, and \fBhash-test\fR.
+.TP
 \fBfiles\fR
 One or more file paths to process. Supports %F and %f from Dolphin service
 menu substitution.
@@ -129,6 +139,13 @@ context-menu plugin instead calls a separate, root-owned KAuth helper
 drop, prompting for the administrator password via polkit. Hardlink Clone,
 Symlink Clone, and Smart Copy are never offered elevated, since they recurse
 over an arbitrarily large, user-controlled tree.
+.SH ARCHIVE OPERATIONS
+The \fB\-\-archive\fR actions implement 7-Zip's cascaded Explorer menu, driven by
+the \fBkio-plugin\fR Archive plugin. \fBextract-here\fR, \fBextract-to\fR,
+\fBtest\fR, the one-click \fB.7z\fR/\fB.zip\fR compress actions, and CRC SHA
+run \fB7z\fR. \fBopen\fR, \fBextract\fR (the Extract files dialog), and
+\fBcompress\fR (Add to archive) open the Ark application. Email items create
+the archive then call \fBxdg-email \-\-attach\fR.
 .SH EXIT STATUS
 .IP 0
 All conversions completed successfully.
@@ -173,6 +190,9 @@ dolphin-context-actions \-\-drop\-symlink \-\-target\-dir ~/Desktop
 .TP
 Show link properties for a file:
 dolphin-context-actions \-\-link\-properties ~/Projects/foo/bar.txt
+.TP
+Extract a zip next to itself, the way 7-Zip's Extract Here does:
+dolphin-context-actions \-\-archive extract-here photos.zip
 .SH DEPENDENCIES
 .TP
 Python 3.10+
@@ -182,6 +202,8 @@ ffmpeg (>= 4.4) with ffprobe
 kdialog (KDE)
 .TP
 libnotify
+.TP
+7zip and Ark (for \fB\-\-archive\fR)
 .SH AUTHORS
 Brunner56 <brunner56@users.noreply.github.com>
 .SH REPORTING BUGS

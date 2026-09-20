@@ -4,7 +4,7 @@
 [![Release](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/release-please.yml/badge.svg)](https://github.com/bodencrouch/dolphin-context-actions/actions/workflows/release-please.yml)
 [![KDE Store](https://img.shields.io/badge/KDE%20Store-Dolphin%20Service%20Menus-3daee9)](https://store.kde.org/browse?cat=102)
 
-Adds file conversion, media tools, and link actions to Dolphin's right-click menu.
+Adds file conversion, media tools, link actions, and a 7-Zip-style Archive menu to Dolphin's right-click menu.
 
 Right-click a supported file to see the actions that apply to it.
 
@@ -58,6 +58,18 @@ The context menu follows the stateful flow from [Link Shell Extension](https://s
 - Successful drops return the menu to **Pick Link Source**.
 - Failed drops keep the source so you can retry.
 
+### Archive (7-Zip-style menu)
+
+A root-level **Archive** submenu matches 7-Zip's cascaded Windows Explorer menu:
+
+- Archives: **Open archive**, **Extract files...**, **Extract Here**, **Extract to "name/"**, **Test archive**
+- Anything: **Add to archive...**, **Compress and email...**, **Add to "name.7z"**, **Add to "name.zip"**, and the matching email items
+- **CRC SHA** nested hashes (CRC-32 through BLAKE2sp, `*`, sidecar `.sha256`, checksum test)
+
+Extract Here / Extract to / Test / the one-click .7z/.zip items / CRC SHA run `7z`. Open, Extract files..., and Add to archive... open Ark's dialogs. Email uses `xdg-email --attach`.
+
+Like the link actions, this menu comes from `kio-plugin/` and needs a source install (`make install` / `install.sh`).
+
 ## Installation
 
 ### From Dolphin itself (easiest)
@@ -76,7 +88,7 @@ generated on your machine, so they list only what your installed tools
 (ffmpeg, LibreOffice, pandoc, …) can actually do.
 
 The store package covers the conversion features. The Link Shell Extension
-plugin is compiled code and still needs a source build (below).
+and Archive plugins are compiled code and still need a source build (below).
 
 ### Every other method
 
@@ -97,7 +109,8 @@ See [INSTALL.md](INSTALL.md) for every available method:
 
 Only the source install (`make install` / `install.sh`) currently builds
 `kio-plugin/`, so it's the only method that provides the Link Shell
-Extension features (**Pick Link Source** / **Drop Link As**) at all — see
+Extension features (**Pick Link Source** / **Drop Link As**) and the
+**Archive** submenu at all — see
 [Limitations](#link-shell-extension-on-linux) below.
 
 After installation, restart Dolphin (`killall dolphin`) to load the service
@@ -121,6 +134,12 @@ file.
 3. Open **Drop Link As**.
 4. Choose **Drop Hardlink**, **Drop Symlink**, or another drop action.
 
+### Unpack or compress
+
+1. Right-click a `.zip` / `.7z` / `.tar.gz` → **Archive** → **Extract Here** or **Extract to "name/"**
+2. Right-click files or a folder → **Archive** → **Add to "name.7z"** or **Add to archive...**
+3. Right-click anything → **Archive** → **CRC SHA** → **SHA-256**
+
 ## Configuration
 
 Right-click any media file → **Context Actions** → **Configure…** to open
@@ -140,7 +159,8 @@ The editable conversion catalog is stored beside it as `conversions.yaml`.
 - **ffmpeg** (≥ 4.4) with ffprobe (for media conversion only)
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
-- **KIO 6** (for the root context-menu plugin)
+- **KIO 6** (for the root context-menu plugins)
+- **7zip** and **Ark** (for the Archive submenu)
 - **PyYAML 6+** (for the conversion catalog)
 
 Some conversions need extra tools. The installer only adds menu actions whose
@@ -159,8 +179,9 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
 - **Smart Move** — Dolphin does not expose file moves to context-menu plugins.
 - **Reparse Points** — NTFS-specific reparse point operations are not applicable on Linux
 - **Backup Mode** — The Windows version's backup mode with elevated privileges is not implemented
-- **Flatpak / Snap / AppImage** — the context-menu plugin (and with it, all
-  Link Shell Extension features, including elevated drops) is not built or
+- **Flatpak / Snap / AppImage** — the context-menu plugins (and with them, all
+  Link Shell Extension features, including elevated drops, and the
+  Archive submenu) are not built or
   packaged for these formats. A root-owned, D-Bus-activated privileged
   helper is fundamentally incompatible with their sandboxing — there is no
   way to install a system D-Bus service or polkit action from inside a
@@ -168,10 +189,10 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
   service menus only.
 - **rpm / deb / Arch packages** — these currently package the Python CLI and
   service menus only; none of them build `kio-plugin/` yet either, so the
-  Link Shell Extension features (Pick Link Source / Drop Link As) aren't
-  available from the packaged builds at all right now. `install.sh` /
-  `make install`, run from a source checkout, is the only path that builds
-  and installs the plugin and its KAuth helper today.
+  Link Shell Extension features (Pick Link Source / Drop Link As) and the
+  Archive submenu aren't available from the packaged builds at all right now.
+  `install.sh` / `make install`, run from a source checkout, is the only
+  path that builds and installs the plugins and the KAuth helper today.
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
@@ -232,7 +253,7 @@ for any Python project.
 ├── pyproject.toml              # Python package definition
 ├── Makefile                    # Build/install/uninstall
 ├── install.sh                  # Manual install script
-├── kio-plugin/                 # Context-menu plugin + KAuth privileged-link helper
+├── kio-plugin/                 # Context-menu plugins + KAuth privileged-link helper
 ├── scripts/
 │   └── check-privileged-pth.py # Scan for root-owned .pth files pointing at user-writable dirs
 ├── debian/                     # Debian packaging
@@ -253,6 +274,7 @@ for any Python project.
 │   ├── ui.py                   # kdialog progress bars / dialogs
 │   ├── config.py               # Config management
 │   ├── link_ops.py             # Link Shell Extension operations
+│   ├── archive_ops.py          # 7-Zip-style Archive menu operations
 │   ├── converters/
 │   │   ├── audio.py            # Audio transcoding (7 formats)
 │   │   └── video.py            # GIF/MP4/WebM/MKV + audio extraction

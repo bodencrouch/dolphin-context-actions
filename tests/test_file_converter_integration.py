@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parent.parent
 def run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT / "src")
+    env["DOLPHIN_CONTEXT_ACTIONS_HEADLESS"] = "1"
+    env["QT_QPA_PLATFORM"] = "offscreen"
     return subprocess.run(
         [sys.executable, "-m", "dolphin_context_actions", *args],
         cwd=ROOT,

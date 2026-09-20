@@ -6,13 +6,13 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
 import re
 import shutil
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+from . import ui
 
 APP_NAME = "Dolphin Context Actions"
 
@@ -147,37 +147,15 @@ def load_conversions(*, available_only: bool = False) -> list[Conversion]:
 
 
 def kdialog(*args: str) -> subprocess.CompletedProcess[str]:
-    try:
-        return subprocess.run(
-            ["kdialog", *args],
-            capture_output=True,
-            text=True,
-            env=os.environ.copy(),
-        )
-    except OSError as exc:
-        # kdialog is absent on headless systems (CI, servers). Callers only
-        # inspect returncode/stdout, so hand back a failed result instead of
-        # crashing mid-conversion.
-        print(f"kdialog unavailable: {exc}", file=sys.stderr)
-        return subprocess.CompletedProcess(["kdialog", *args], 1, "", str(exc))
+    return ui.kdialog(*args)
 
 
 def notify(title: str, message: str, icon: str = "document-convert") -> None:
-    # Fire and forget: notify-send blocks indefinitely with no notification
-    # daemon and is absent entirely on headless systems. A conversion that
-    # succeeded must not crash or hang while announcing it.
-    try:
-        subprocess.Popen(
-            ["notify-send", "-i", icon, "-a", APP_NAME, title, message],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except OSError:
-        pass
+    ui.notify(title, message, icon)
 
 
 def kdialog_error(message: str) -> None:
-    kdialog("--title", APP_NAME, "--error", message)
+    ui.error_dialog(APP_NAME, message)
 
 
 def matches_conversion(path: Path, conv: Conversion) -> bool:

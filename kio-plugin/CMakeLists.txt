@@ -29,6 +29,19 @@ target_link_libraries(
         KF6::AuthCore
 )
 
+kcoreaddons_add_plugin(
+    dolphinarkfileitemaction
+    SOURCES dolphinarkfileitemaction.cpp
+    INSTALL_NAMESPACE "kf6/kfileitemaction"
+)
+target_link_libraries(
+    dolphinarkfileitemaction
+    PRIVATE
+        Qt6::Widgets
+        KF6::CoreAddons
+        KF6::KIOWidgets
+)
+
 # Root-owned helper that creates a single symlink/hardlink outside the user's
 # home directory. D-Bus-activated by polkit; never invoked by path from an
 # unprivileged process (that would be the pkexec-on-a-user-script antipattern

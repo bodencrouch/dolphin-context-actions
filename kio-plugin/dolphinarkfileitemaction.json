@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Icon": "ark",
+        "MimeTypes": [
+            "application/octet-stream",
+            "inode/directory"
+        ],
+        "Name": "Archive",
+        "Description": "7-Zip-style archive actions via Ark and 7z"
+    }
+}

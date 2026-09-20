@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import config as cfgmod
+from . import archive_ops, config as cfgmod
 from . import file_converter, link_ops, ui, uploaders
 from .converters import audio, video
 
@@ -341,6 +341,11 @@ def main():
     parser.add_argument("--link-properties", action="store_true", help="Show link properties")
     parser.add_argument("--enumerate-hardlinks", action="store_true", help="Enumerate hardlinks")
     parser.add_argument("--target-dir", help="Target directory for drop operations")
+    parser.add_argument(
+        "--archive",
+        choices=archive_ops.ARK_ACTIONS,
+        help="7-Zip-style action from the Archive context menu",
+    )
 
     parser.add_argument("files", nargs="*")
 
@@ -412,12 +417,16 @@ def main():
         handle_enumerate_hardlinks(args.files)
         return
 
+    if args.archive:
+        return archive_ops.run_action(args.archive, args.files)
+
     if args.smart_menu or not any([
         args.batch, args.configure, args.pick_link_source,
         args.cancel_link, args.drop_as, args.drop_hardlink, args.drop_symlink,
         args.hardlink_clone, args.symlink_clone, args.smart_copy,
         args.link_properties, args.enumerate_hardlinks,
         args.file_convert, args.pick_file_conversion, args.list_file_conversions,
+        args.archive,
     ]):
         smart_menu(args.files)
         return

@@ -67,6 +67,7 @@ src/dolphin_context_actions/
 ├── config.py                # JSON config read/write
 ├── ui.py                    # kdialog/qdbus progress bar helpers
 ├── link_ops.py              # Link Shell Extension operations (hardlink/symlink/clone/copy)
+├── archive_ops.py           # 7-Zip-style Archive menu (extract/compress/hash)
 ├── uploaders.py             # Imgur upload
 └── converters/
     ├── __init__.py          # unique_output() -- auto-rename on collision
@@ -75,7 +76,10 @@ src/dolphin_context_actions/
     └── video.py             # GIF/MP4/WebM/MKV + audio extraction
 
 kio-plugin/
-├── dolphinlinkfileitemaction.cpp        # Context-menu plugin (KAbstractFileItemActionPlugin)
+├── dolphinlinkfileitemaction.cpp        # Link context-menu plugin
+├── dolphinlinkfileitemaction.json
+├── dolphinarkfileitemaction.cpp         # Archive 7-Zip-style menu
+├── dolphinarkfileitemaction.json
 ├── linkhelper.cpp                       # KAuth privileged helper (root-owned, D-Bus-activated)
 └── io.github.bodencrouch.linkhelper.actions  # KAuth/polkit action policy
 

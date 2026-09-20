@@ -72,7 +72,8 @@ make install
 ```
 
 This installs the Python package and media service menus. It also builds
-`kio-plugin/` — the context-menu plugin and its KAuth privileged-link
+`kio-plugin/` — the context-menu plugins (Pick Link Source / Drop Link As,
+and the Archive submenu) and the KAuth privileged-link
 helper — and installs both to system paths. Only the final `cmake
 --install` step uses `sudo`; `make install` refuses to run under `sudo`
 itself (see [`scripts/check-privileged-pth.py`](scripts/check-privileged-pth.py)
@@ -82,7 +83,8 @@ Every other method in the table above — pipx, uvx, pip, Debian/Ubuntu,
 Fedora, openSUSE, Arch, Snap, Flatpak, AppImage — packages the Python CLI
 and service menus only. None of them currently build `kio-plugin/`, so
 **Pick Link Source** / **Drop Link As** (the whole Link Shell Extension
-feature set, not just the elevated case) are unavailable from any of those.
+feature set, not just the elevated case) and the **Archive** submenu
+are unavailable from any of those.
 `make install` / `install.sh`, run from a source checkout, is the only path
 that provides them today.
 
@@ -217,7 +219,8 @@ ls -la ~/.local/share/kio/servicemenus/dolphin-context-actions*
 
 1. Restart Dolphin: `killall dolphin`
 2. Check the service menu files are installed (see above)
-3. Check `dolphinlinkfileitemaction.so` is in Qt's plugin directory
+3. Check `dolphinlinkfileitemaction.so` and `dolphinarkfileitemaction.so`
+   are in Qt's plugin directory
 4. Verify the binary is in PATH: `which dolphin-context-actions`
 5. Test the CLI directly: `dolphin-context-actions --help`
 6. Check Dolphin's service menu directory config under

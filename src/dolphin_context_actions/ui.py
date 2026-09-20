@@ -9,7 +9,23 @@ QDBUS = next(
 )
 
 
+def gui_blocked() -> bool:
+    """True when a test run must not open kdialog or notify-send.
+
+    Pytest sets PYTEST_CURRENT_TEST in the parent; CLI integration tests copy
+    the environment into a child, so a real KDE session still doesn't get a
+    dialog on the user's desktop.
+    """
+    return bool(
+        os.environ.get("DOLPHIN_CONTEXT_ACTIONS_HEADLESS")
+        or os.environ.get("PYTEST_CURRENT_TEST")
+    )
+
+
 def kdialog(*args) -> subprocess.CompletedProcess:
+    if gui_blocked():
+        print(f"kdialog skipped (headless): {args}", file=sys.stderr)
+        return subprocess.CompletedProcess(["kdialog", *args], 1, "", "headless")
     try:
         r = subprocess.run(
             ["kdialog"] + list(args),
@@ -28,6 +44,8 @@ def kdialog(*args) -> subprocess.CompletedProcess:
 
 
 def notify(title: str, msg: str, icon: str = "document-convert"):
+    if gui_blocked():
+        return
     # Fire and forget. notify-send blocks indefinitely when no notification
     # daemon is running, which used to stall the caller mid-operation.
     try:

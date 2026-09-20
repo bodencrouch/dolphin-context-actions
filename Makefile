@@ -69,6 +69,7 @@ uninstall:
 	rm -f $(SERVICEDIR)/dolphin-context-actions-convert-*.desktop
 	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 	sudo rm -f $(PLUGINPREFIX)/lib64/qt6/plugins/kf6/kfileitemaction/dolphinlinkfileitemaction.so
+	sudo rm -f $(PLUGINPREFIX)/lib64/qt6/plugins/kf6/kfileitemaction/dolphinarkfileitemaction.so
 	sudo rm -f /usr/libexec/kf6/kauth/linkhelper
 	sudo rm -f /usr/share/polkit-1/actions/io.github.bodencrouch.linkhelper.policy
 	sudo rm -f /usr/share/dbus-1/system-services/io.github.bodencrouch.linkhelper.service
