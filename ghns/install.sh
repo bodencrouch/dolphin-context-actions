@@ -11,17 +11,16 @@
 #   install.sh --uninstall    (some versions try --deinstall)
 #
 # What install does:
-#   1. Copies the bundled Python package to  $XDG_DATA_HOME/dolphin-context-actions/
-#   2. Writes a launcher there and links it from ~/.local/bin (best effort)
+#   1. Copies the bundled Linux binary to  $XDG_DATA_HOME/dolphin-context-actions/
+#   2. Links it from ~/.local/bin (best effort)
 #   3. Installs the service menus to        $XDG_DATA_HOME/kio/servicemenus/
 #      with Exec= rewritten to the absolute launcher path, because Dolphin
 #      often runs without ~/.local/bin on PATH
 #   4. Generates the per-filetype "Convert" menus for the tools present on
-#      THIS machine (ffmpeg, libreoffice, pandoc, …) via the bundled generator
+#      THIS machine (ffmpeg, libreoffice, pandoc, …) via the bundled binary
 #   5. Records every installed file so uninstall removes exactly that
 #
-# Runs with only python3 + coreutils. No pip, no PyYAML (the conversion
-# registry ships pre-converted to JSON), no compilers, no sudo.
+# No python3, pip, compilers, or sudo.
 set -u
 
 HERE="$(cd -- "$(dirname -- "$0")" && pwd)"
@@ -38,12 +37,6 @@ log() { printf '%s\n' "$*" >&2; }
 fail() {
     log "ERROR: $*"
     exit 1
-}
-
-find_python() {
-    command -v python3 2>/dev/null && return 0
-    command -v python 2>/dev/null && return 0
-    return 1
 }
 
 refresh_menus() {
@@ -63,9 +56,7 @@ notice() {
 }
 
 do_install() {
-    PYTHON="$(find_python)" || fail "python3 is required but was not found."
-
-    [ -d "$HERE/dolphin_context_actions" ] || fail "Package payload missing next to install.sh."
+    [ -x "$HERE/dolphin-context-actions" ] || fail "Package payload missing next to install.sh."
     [ -d "$HERE/servicemenus" ] || fail "Service menus missing next to install.sh."
 
     # Re-install cleanly over any previous version.
@@ -74,23 +65,21 @@ do_install() {
     mkdir -p "$APP_DIR" "$MENU_DIR" || fail "Cannot create $APP_DIR."
     : > "$MANIFEST".tmp
 
-    # 1. The Python package, vendored -- not pip-installed -- so nothing
-    #    touches the user's Python environment.
-    cp -R "$HERE/dolphin_context_actions" "$APP_DIR/" || fail "Copy failed."
-    find "$APP_DIR/dolphin_context_actions" -type f -print >> "$MANIFEST".tmp
-
-    # 2. Launcher with an absolute interpreter-agnostic entry.
-    cat > "$LAUNCHER" <<LAUNCH
-#!/usr/bin/env bash
-export PYTHONPATH="$APP_DIR\${PYTHONPATH:+:\$PYTHONPATH}"
-exec "$PYTHON" -m dolphin_context_actions "\$@"
-LAUNCH
+    # 1. The Linux helper binary -- not compiled here, not pip-installed.
+    cp "$HERE/dolphin-context-actions" "$LAUNCHER" || fail "Copy failed."
     chmod 0755 "$LAUNCHER"
     printf '%s\n' "$LAUNCHER" >> "$MANIFEST".tmp
 
+    for extra in conversions.yaml conversions.json; do
+        if [ -f "$HERE/$extra" ]; then
+            cp "$HERE/$extra" "$APP_DIR/$extra" || fail "Copy failed."
+            printf '%s\n' "$APP_DIR/$extra" >> "$MANIFEST".tmp
+        fi
+    done
+
     # Best-effort ~/.local/bin link: nice for terminals, and the optional
     # Link Shell Extension KIO plugin looks the command up there. Never
-    # overwrite something that isn't ours (e.g. a pip install).
+    # overwrite something that isn't ours (e.g. a cargo install).
     if mkdir -p "$BIN_DIR" 2>/dev/null; then
         if [ ! -e "$BIN_DIR/dolphin-context-actions" ] || [ -L "$BIN_DIR/dolphin-context-actions" ]; then
             ln -sfn "$LAUNCHER" "$BIN_DIR/dolphin-context-actions" \
@@ -98,7 +87,7 @@ LAUNCH
         fi
     fi
 
-    # 3. Static service menus, Exec rewritten to the absolute launcher.
+    # 2. Static service menus, Exec rewritten to the absolute launcher.
     for menu in "$HERE"/servicemenus/*.desktop; do
         [ -e "$menu" ] || continue
         target="$MENU_DIR/$(basename "$menu")"
@@ -108,12 +97,9 @@ LAUNCH
         printf '%s\n' "$target" >> "$MANIFEST".tmp
     done
 
-    # 4. Per-filetype Convert menus, generated against the tools installed on
+    # 3. Per-filetype Convert menus, generated against the tools installed on
     #    this machine. Not fatal: the static menus above already work.
-    if ! "$PYTHON" -c "import sys; sys.path.insert(0, '$APP_DIR'); \
-from dolphin_context_actions.file_converter_menus import generate; \
-from pathlib import Path; \
-[print(p) for p in generate(output_dir=Path('$MENU_DIR'), converter_bin=Path('$LAUNCHER'))]" \
+    if ! "$LAUNCHER" --generate-menus --output-dir "$MENU_DIR" --converter-bin "$LAUNCHER" \
         >> "$MANIFEST".tmp 2>/dev/null; then
         log "Note: no Convert menus generated (no supported conversion tools found yet)."
         log "They appear automatically after: install.sh --install with the tools present."

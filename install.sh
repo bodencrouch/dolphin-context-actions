@@ -4,13 +4,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# `pip install --user -e .` writes a .pth file pointing back at this checkout.
-# Run as root (sudo/pkexec on the whole script, not just the plugin install
-# step below) that .pth file ends up root-owned while still pointing at a
-# directory this user can write to -- any root Python process then has a
-# user-writable directory on its import path. Hit this exact class of bug
-# twice already; refusing outright is cheaper than relying on cleanup after
-# the fact. `sudo` is still used, but only for the one step that needs it.
+# Installing as root writes into root's ~/.local while the plugin step still
+# needs sudo on its own. Refuse rather than mix the two.
 if [ "$(id -u)" -eq 0 ]; then
     echo "Do not run this installer as root (or via sudo/pkexec)." >&2
     echo "It calls sudo itself for the one step that needs it." >&2
@@ -19,21 +14,14 @@ fi
 
 SERVICEDIR="${HOME}/.local/share/kio/servicemenus"
 CONFIGDIR="${HOME}/.config/dolphin-context-actions"
-REGISTRY_SRC="src/dolphin_context_actions/conversions.yaml"
+REGISTRY_SRC="assets/conversions.yaml"
 REGISTRY_DST="${CONFIGDIR}/conversions.yaml"
+CONVERTERBIN="${HOME}/.local/bin/dolphin-context-actions"
 
-is_installed() {
-    pip show dolphin-context-actions >/dev/null 2>&1
-}
-
-install_python_package() {
-    if is_installed; then
-        echo "Python package already installed. Updating..."
-        pip install --user -e . --quiet
-    else
-        echo "Installing Python package..."
-        pip install --user -e .
-    fi
+install_rust_helper() {
+    echo "Installing Rust helper..."
+    cargo install --path . --root "$HOME/.local" --force --locked \
+        || cargo install --path . --root "$HOME/.local" --force
 }
 
 install_service_menus() {
@@ -68,9 +56,9 @@ install_service_menus() {
         cp "$REGISTRY_SRC" "$REGISTRY_DST"
     fi
 
-    python3 -m dolphin_context_actions.file_converter_menus \
+    "$CONVERTERBIN" --generate-menus \
         --output-dir "$SERVICEDIR" \
-        --converter-bin "${HOME}/.local/bin/dolphin-context-actions" \
+        --converter-bin "$CONVERTERBIN" \
         --registry "$REGISTRY_DST"
 
     # Menus installed under former project names still call the old executable,
@@ -96,7 +84,7 @@ install_link_plugin() {
 echo "=== Dolphin Context Actions Installer ==="
 echo ""
 
-install_python_package
+install_rust_helper
 echo ""
 
 install_service_menus
@@ -112,6 +100,3 @@ echo "  Config dir:    ${CONFIGDIR}/"
 echo "  Bin dir:       ${HOME}/.local/bin/"
 echo ""
 echo "Restart Dolphin (killall dolphin) to reload service menus."
-echo ""
-echo "If you ever install this package's Python component as root (sudo/pkexec"
-echo "pip install), run scripts/check-privileged-pth.py --fix afterward."
