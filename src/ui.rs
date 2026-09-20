@@ -149,20 +149,43 @@ mod tests {
 
     #[test]
     fn kdialog_does_not_exec_when_headless() {
+        let _env = crate::test_env::EnvGuard::lock();
         env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", "1");
         let result = kdialog(&["--title", "Dolphin Context Actions", "--error", "nope"]);
-        env::remove_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS");
         assert!(!result.status.success());
         assert_eq!(String::from_utf8_lossy(&result.stderr), "headless");
     }
 
     #[test]
     fn gui_blocked_explicit_flag() {
+        let _env = crate::test_env::EnvGuard::lock();
+        let prev_pytest = env::var_os("PYTEST_CURRENT_TEST");
         env::remove_var("PYTEST_CURRENT_TEST");
         env::remove_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS");
         assert!(!gui_blocked());
         env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", "1");
         assert!(gui_blocked());
+        match prev_pytest {
+            Some(value) => env::set_var("PYTEST_CURRENT_TEST", value),
+            None => env::remove_var("PYTEST_CURRENT_TEST"),
+        }
+    }
+
+    #[test]
+    fn gui_blocked_honors_pytest_current_test() {
+        let _env = crate::test_env::EnvGuard::lock();
+        let prev_headless = env::var_os("DOLPHIN_CONTEXT_ACTIONS_HEADLESS");
+        let prev_pytest = env::var_os("PYTEST_CURRENT_TEST");
         env::remove_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS");
+        env::set_var("PYTEST_CURRENT_TEST", "tests/test_example.py::test_name");
+        assert!(gui_blocked());
+        match prev_pytest {
+            Some(value) => env::set_var("PYTEST_CURRENT_TEST", value),
+            None => env::remove_var("PYTEST_CURRENT_TEST"),
+        }
+        match prev_headless {
+            Some(value) => env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", value),
+            None => env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", "1"),
+        }
     }
 }
