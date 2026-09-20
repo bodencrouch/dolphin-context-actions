@@ -801,11 +801,29 @@ mod tests {
     use std::os::unix::fs::symlink as unix_symlink;
     use tempfile::TempDir;
 
-    fn isolated() -> TempDir {
+    struct Isolated {
+        dir: TempDir,
+        _env: crate::test_env::EnvGuard,
+    }
+
+    impl Isolated {
+        fn path(&self) -> &Path {
+            self.dir.path()
+        }
+    }
+
+    impl Drop for Isolated {
+        fn drop(&mut self) {
+            std::env::remove_var("DOLPHIN_LINK_SOURCES_FILE");
+        }
+    }
+
+    fn isolated() -> Isolated {
+        let env = crate::test_env::EnvGuard::lock();
         let dir = TempDir::new().unwrap();
         std::env::set_var("DOLPHIN_LINK_SOURCES_FILE", dir.path().join("picked_sources.json"));
         std::env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", "1");
-        dir
+        Isolated { dir, _env: env }
     }
 
     #[test]

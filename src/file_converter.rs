@@ -657,8 +657,8 @@ mod tests {
 
     #[test]
     fn unknown_conversion_error_stays_headless() {
+        let _env = crate::test_env::EnvGuard::lock();
         std::env::set_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS", "1");
         assert_eq!(run_convert("missing-conversion", &[], false), 1);
-        std::env::remove_var("DOLPHIN_CONTEXT_ACTIONS_HEADLESS");
     }
 }
