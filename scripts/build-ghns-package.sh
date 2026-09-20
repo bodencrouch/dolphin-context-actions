@@ -71,8 +71,9 @@ if command -v shellcheck >/dev/null 2>&1; then
     shellcheck "$root/install.sh"
 fi
 # Service menus are Type=Service KDE files, which desktop-file-validate
-# rejects wholesale -- validate structure with Python instead.
-python3 - "$root"/servicemenus/*.desktop <<'PY'
+# rejects wholesale -- validate structure with Python when it is present.
+if command -v python3 >/dev/null 2>&1; then
+    python3 - "$root"/servicemenus/*.desktop <<'PY'
 import configparser, sys
 for path in sys.argv[1:]:
     cp = configparser.RawConfigParser()
@@ -88,6 +89,9 @@ for path in sys.argv[1:]:
         assert section.get("Exec") or action == "configure", f"{path}: {action} has no Exec"
     print(f"ok: {path} ({len(actions)} actions)")
 PY
+else
+    echo "skip: python3 not found; desktop-file configparser check omitted"
+fi
 
 listing="$("$root/dolphin-context-actions" --list-file-conversions)"
 count="$(printf '%s\n' "$listing" | wc -l)"

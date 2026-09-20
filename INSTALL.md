@@ -129,12 +129,12 @@ Runtime dependencies:
 - **libnotify** (desktop notifications)
 - **KIO 6** (Dolphin context-menu integration)
 
-From-source builds also need **Rust 1.75+ (cargo)**. GHNS ships a prebuilt
-helper, so that path does not.
+From-source builds also need **Rust 1.79+ (cargo)** (`std::path::absolute`).
+GHNS ships a prebuilt helper, so that path does not.
 
 General conversions use optional tools. Install only the ones you need:
 
-- PyMuPDF for PDF text extraction
+- `pdftotext` (poppler) for PDF text extraction
 - LibreOffice for office documents
 - pandoc for Markdown and HTML
 - ImageMagick for image formats
