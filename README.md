@@ -44,7 +44,7 @@ files with all 7 formats available as one-click actions.
 - **Batch processing** — select multiple files, process them all at once
 - **Configurable defaults** — set your preferred audio format and GIF preset
 - **Notifications** — desktop notification on completion (or errors)
-- **Document conversion** — use LibreOffice, pandoc, or PyMuPDF when installed
+- **Document conversion** — use LibreOffice, pandoc, or `pdftotext` when installed
 - **Data conversion** — convert YAML, JSON, TOML, CSV, and TSV files
 - **Image conversion** — convert PNG, JPEG, WebP, and HEIC files with ImageMagick
 
@@ -156,7 +156,7 @@ The editable conversion catalog is stored beside it as `conversions.yaml`.
 
 ## Requirements
 
-- **Rust 1.75+ (cargo)** (from-source builds; GHNS ships a prebuilt helper)
+- **Rust 1.79+ (cargo)** (from-source builds; GHNS ships a prebuilt helper)
 - **ffmpeg** (≥ 4.4) with ffprobe (for media conversion only)
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)

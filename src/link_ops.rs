@@ -20,8 +20,9 @@ fn picked_sources_file() -> PathBuf {
     if let Ok(override_path) = std::env::var("DOLPHIN_LINK_SOURCES_FILE") {
         return PathBuf::from(override_path);
     }
-    dirs::cache_dir()
-        .unwrap_or_else(|| PathBuf::from(".").join(".cache"))
+    dirs::home_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(".cache")
         .join("dolphin-link-extension")
         .join("picked_sources.json")
 }

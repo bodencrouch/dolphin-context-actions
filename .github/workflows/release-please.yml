@@ -32,25 +32,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install build deps
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends shellcheck
-          python -m pip install PyYAML build
-      - name: Build the GHNS package and the Python distributions
-        run: |
-          scripts/build-ghns-package.sh dist
-          python -m build --outdir dist
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the GHNS package
+        run: scripts/build-ghns-package.sh dist
       - name: Upload assets to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ needs.release-please.outputs.tag_name }}" \
             dist/dolphin-context-actions-servicemenu-v*.tar.gz \
-            dist/*.whl dist/*.tar.gz \
             --clobber --repo "${{ github.repository }}"
 
   publish-store:
@@ -62,13 +52,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - uses: dtolnay/rust-toolchain@stable
       - name: Build the GHNS package
-        run: |
-          python -m pip install PyYAML
-          scripts/build-ghns-package.sh dist
+        run: scripts/build-ghns-package.sh dist
       - name: Push new payload to the store product (OCS API)
         env:
           PLING_USERNAME: ${{ secrets.PLING_USERNAME }}

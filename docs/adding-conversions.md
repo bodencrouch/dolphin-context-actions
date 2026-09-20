@@ -3,9 +3,8 @@
 The conversion catalog lives in a YAML file. After you edit it, run
 `make install-menus-only` to regenerate Dolphin's context menus.
 
-> Registries load from YAML or JSON. The package installed through Dolphin's
-> *Download New Services…* dialog ships the catalog pre-converted to
-> `conversions.json` so it runs without PyYAML; your own overrides can use
+> Registries load from YAML or JSON. The Rust helper embeds the bundled
+> catalog and can load either format from disk; your own overrides can use
 > either format.
 
 Your live copy is at:
@@ -15,7 +14,7 @@ Your live copy is at:
 ```
 
 The repository ships a default at
-`src/dolphin_context_actions/conversions.yaml`.
+`assets/conversions.yaml`.
 
 ## Registry format
 
@@ -30,7 +29,7 @@ conversions:
     target_extension: .md      # output extension (written beside the source file)
     featured: true             # show directly in the Convert submenu
     requires_commands: []      # at least one must exist on PATH (empty = no check)
-    requires_packages: [python3-PyMuPDF]  # Python imports that must succeed
+    requires_packages: [python3-PyMuPDF]  # alias: checks for pdftotext (poppler)
     engine: pymupdf_text         # which backend function runs the conversion
     icon: text-markdown          # freedesktop icon name for the menu entry
 ```
@@ -49,7 +48,10 @@ conversions:
 
 **`requires_commands`** — If non-empty, at least one command must be found on `$PATH`. For LibreOffice, list both `libreoffice` and `soffice` since distros differ.
 
-**`requires_packages`** — Python import names checked at menu generation time. Supported aliases: `python3-PyMuPDF`, `pymupdf`, `PyYAML`, `tomli-w`.
+**`requires_packages`** — Extra checks at menu generation time. The
+`python3-PyMuPDF` / `pymupdf` / `PyMuPDF` aliases look for `pdftotext`.
+`PyYAML` and `tomli-w` always pass because YAML/TOML/JSON engines are built
+into the crate.
 
 **`engine`** — See below. This is the only field that ties a registry entry to code.
 
@@ -57,12 +59,12 @@ conversions:
 
 | Engine | What it does | Typical use |
 |--------|--------------|-------------|
-| `pymupdf_text` | Extracts plain text from PDF pages via PyMuPDF | PDF → Markdown |
+| `pymupdf_text` | Extracts plain text from PDF pages via `pdftotext` (poppler) | PDF → Markdown |
 | `libreoffice_headless` | Runs `libreoffice --headless --convert-to …` | Office docs → PDF |
-| `yaml_json` | Parses YAML or JSON and writes the other format | YAML ↔ JSON |
+| `yaml_json` | Parses YAML or JSON and writes the other format (built-in) | YAML ↔ JSON |
 | `pandoc` | Runs `pandoc source -o target` | Markdown ↔ HTML, MD → PDF |
-| `csv_json` | CSV/TSV ↔ JSON via stdlib `csv` | CSV → JSON, JSON → CSV, TSV → CSV |
-| `toml_json` | TOML ↔ JSON via `tomllib` and `tomli_w` | TOML ↔ JSON |
+| `csv_json` | CSV/TSV ↔ JSON (built-in) | CSV → JSON, JSON → CSV, TSV → CSV |
+| `toml_json` | TOML ↔ JSON (built-in) | TOML ↔ JSON |
 | `imagemagick` | Runs `magick` or `convert` for raster swaps | PNG/JPEG/WebP/HEIC |
 
 ### Engine notes
@@ -71,8 +73,8 @@ conversions:
 
 **`imagemagick`** — HEIC support depends on your ImageMagick build (libheif delegate). If conversion fails, the error dialog shows ImageMagick's message.
 
-To add an engine, edit `src/dolphin_context_actions/file_converter.py`. Add a
-function and register it in the `ENGINES` dictionary.
+To add an engine, edit `src/file_converter.rs`. Add a function and register
+it in the `run_conversion` match.
 
 ## Worked example: Markdown to PDF
 
