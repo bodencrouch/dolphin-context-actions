@@ -1,0 +1,57 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=all/allfiles;inode/directory;application/zip;application/x-7z-compressed;application/x-tar;application/gzip;application/x-bzip;application/x-bzip2;application/x-xz;application/x-rar;application/vnd.rar;application/x-iso9660-image;
+Actions=extractHere;extractTo;extract;test;compress;compress7z;compressZip;compressEmail;sha256;crc32;
+X-KDE-Submenu=Archive
+Icon=ark
+
+[Desktop Action extractHere]
+Name=Extract Here
+Icon=archive-extract
+Exec=dolphin-context-actions --archive extract-here %F
+
+[Desktop Action extractTo]
+Name=Extract to folder
+Icon=archive-extract
+Exec=dolphin-context-actions --archive extract-to %F
+
+[Desktop Action extract]
+Name=Extract files...
+Icon=archive-extract
+Exec=dolphin-context-actions --archive extract %F
+
+[Desktop Action test]
+Name=Test archive
+Icon=dialog-ok
+Exec=dolphin-context-actions --archive test %F
+
+[Desktop Action compress]
+Name=Add to archive...
+Icon=archive-insert
+Exec=dolphin-context-actions --archive compress %F
+
+[Desktop Action compress7z]
+Name=Add to 7z
+Icon=archive-insert
+Exec=dolphin-context-actions --archive compress-to-7z %F
+
+[Desktop Action compressZip]
+Name=Add to zip
+Icon=archive-insert
+Exec=dolphin-context-actions --archive compress-to-zip %F
+
+[Desktop Action compressEmail]
+Name=Compress and email...
+Icon=mail-send
+Exec=dolphin-context-actions --archive compress-email %F
+
+[Desktop Action sha256]
+Name=SHA-256
+Icon=document-properties
+Exec=dolphin-context-actions --archive hash-sha256 %F
+
+[Desktop Action crc32]
+Name=CRC-32
+Icon=document-properties
+Exec=dolphin-context-actions --archive hash-crc32 %F

@@ -1,0 +1,27 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=all/allfiles;inode/directory;
+Actions=pick;cancel;properties;enumerate;
+X-KDE-Submenu=Link
+Icon=edit-link
+
+[Desktop Action pick]
+Name=Pick Link Source
+Icon=edit-link
+Exec=dolphin-context-actions --pick-link-source %F
+
+[Desktop Action cancel]
+Name=Cancel Link Creation
+Icon=edit-delete
+Exec=dolphin-context-actions --cancel-link
+
+[Desktop Action properties]
+Name=Link Properties
+Icon=dialog-information
+Exec=dolphin-context-actions --link-properties %f
+
+[Desktop Action enumerate]
+Name=Enumerate Hardlinks
+Icon=view-list
+Exec=dolphin-context-actions --enumerate-hardlinks %f
