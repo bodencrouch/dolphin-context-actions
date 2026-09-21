@@ -1,0 +1,10 @@
+Hardlink or symlink from the right-click menu.
+
+Pick a source file, then drop a hardlink or symlink into another folder. Same idea as Link Shell Extension on Windows, on filesystems that allow it (ext4, btrfs, xfs).
+
+Cheap check: Pick Link Source on a file, Drop Symlink on a folder.
+
+Directory hardlinks are not a Unix thing — use a symlink. Elevated drops into root-owned directories need the optional KIO plugin from a source build.
+
+Author: Boden Crouch (brunner56)
+Source: https://github.com/bodencrouch/dolphin-context-actions

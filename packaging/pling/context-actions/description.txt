@@ -1,0 +1,22 @@
+Convert a file from the right-click menu.
+
+Select a file in Dolphin, pick a format, and a converted copy appears next to it. The original is left alone.
+
+WHAT YOU GET
+
+• Video to MP4, WebM, MKV, or GIF
+• Audio to MP3, OGG, FLAC, WAV, M4A, OPUS, ALAC
+• Images PNG / JPG / WebP / HEIC
+• Documents to PDF; PDF to Markdown
+• JSON, YAML, CSV, TOML
+• Extract audio from a video
+• Upload an image to Imgur
+
+Menus list only the tools already on the machine. ffmpeg for media; LibreOffice or pandoc if you have them.
+
+INSTALL
+
+Settings → Configure Dolphin → Context Menu → Download New Services. Everything stays in your home directory.
+
+Author: Boden Crouch (brunner56)
+Source: https://github.com/bodencrouch/dolphin-context-actions

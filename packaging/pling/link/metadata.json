@@ -1,0 +1,23 @@
+{
+  "product": {
+    "name": "Dolphin Link",
+    "summary": "Hardlink or symlink from the right-click menu.",
+    "author": { "username": "brunner56", "name": "Boden Crouch" },
+    "category_id": 102,
+    "category_name": "Dolphin Service Menus",
+    "license": "MIT",
+    "homepage": "https://github.com/bodencrouch/dolphin-context-actions",
+    "issues": "https://github.com/bodencrouch/dolphin-context-actions/issues",
+    "tags": [
+      "dolphin",
+      "servicemenu",
+      "hardlink",
+      "symlink",
+      "kde",
+      "plasma",
+      "context-menu"
+    ],
+    "description_file": "description.txt",
+    "payload": "dist/dolphin-link-servicemenu-v<version>.tar.gz"
+  }
+}
