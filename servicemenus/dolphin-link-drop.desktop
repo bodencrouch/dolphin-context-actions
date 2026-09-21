@@ -1,0 +1,32 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=KonqPopupMenu/Plugin
+MimeType=inode/directory;
+Actions=dropHardlink;dropSymlink;hardlinkClone;symlinkClone;smartCopy;
+X-KDE-Submenu=Link
+Icon=edit-link
+
+[Desktop Action dropHardlink]
+Name=Drop Hardlink
+Icon=edit-link
+Exec=dolphin-context-actions --drop-hardlink --target-dir %f
+
+[Desktop Action dropSymlink]
+Name=Drop Symlink
+Icon=edit-link
+Exec=dolphin-context-actions --drop-symlink --target-dir %f
+
+[Desktop Action hardlinkClone]
+Name=Hardlink Clone
+Icon=folder
+Exec=dolphin-context-actions --drop-as hardlink-clone --target-dir %f
+
+[Desktop Action symlinkClone]
+Name=Symlink Clone
+Icon=folder
+Exec=dolphin-context-actions --drop-as symlink-clone --target-dir %f
+
+[Desktop Action smartCopy]
+Name=Smart Copy
+Icon=edit-copy
+Exec=dolphin-context-actions --drop-as smart-copy --target-dir %f
