@@ -20,7 +20,8 @@ exercise_product() {
     local app_slug="$2"
     local extra_check="${3:-}"
     local fake_home prefix tarball pkg_dir app_dir menu_dir launcher
-    local found dup leftover listing count gen_count
+    local found dup leftover listing count gen_count expected_name
+    local install_log uninstall_log
     local -a desktops
 
     case "$product" in
@@ -69,6 +70,14 @@ exercise_product() {
     [ ! -d "$pkg_dir/dolphin_context_actions" ] || { echo "FAIL: python package leaked into $product tarball"; exit 1; }
     [ "$(tr -d '\n' < "$pkg_dir/product.id")" = "$app_slug" ] \
         || { echo "FAIL: product.id want $app_slug got $(tr -d '\n' < "$pkg_dir/product.id" 2>/dev/null || true)"; exit 1; }
+    expected_name=""
+    case "$product" in
+        context-actions) expected_name="Context Actions" ;;
+        archive) expected_name="Dolphin Archive" ;;
+        link) expected_name="Dolphin Link" ;;
+    esac
+    [ "$(tr -d '\n' < "$pkg_dir/product.name")" = "$expected_name" ] \
+        || { echo "FAIL: product.name want $expected_name got $(tr -d '\n' < "$pkg_dir/product.name" 2>/dev/null || true)"; exit 1; }
 
     if [ "$extra_check" = conversions ]; then
         [ -f "$pkg_dir/conversions.json" ] \
@@ -92,7 +101,24 @@ exercise_product() {
     }
 
     step "install $product with --install (primary servicemenuinstaller argument)"
-    run_installer --install
+    install_log="$(run_installer --install 2>&1)"
+    printf '%s\n' "$install_log"
+    if [ "$extra_check" = conversions ]; then
+        printf '%s\n' "$install_log" | grep -q "Installed. Right-click a media or document file in Dolphin." \
+            || { echo "FAIL: convert install log wording"; exit 1; }
+    else
+        if printf '%s\n' "$install_log" | grep -Fq "Context Actions installed"; then
+            echo "FAIL: $product install log says Context Actions installed"; exit 1
+        fi
+        if printf '%s\n' "$install_log" | grep -Fq "Right-click a file in Dolphin to convert it."; then
+            echo "FAIL: $product install log uses convert hint"; exit 1
+        fi
+        if printf '%s\n' "$install_log" | grep -Fq "Right-click a media or document file in Dolphin"; then
+            echo "FAIL: $product install log uses convert wording"; exit 1
+        fi
+        printf '%s\n' "$install_log" | grep -q "Installed." \
+            || { echo "FAIL: $product install produced no Installed log"; exit 1; }
+    fi
 
     app_dir="$fake_home/.local/share/$app_slug"
     menu_dir="$fake_home/.local/share/kio/servicemenus"
@@ -141,7 +167,13 @@ exercise_product() {
     [ "$dup" -eq 0 ] || { echo "FAIL: manifest has duplicates after reinstall"; exit 1; }
 
     step "uninstall $product leaves that product's HOME entries clean"
-    run_installer --uninstall
+    uninstall_log="$(run_installer --uninstall 2>&1)"
+    printf '%s\n' "$uninstall_log"
+    if [ "$extra_check" != conversions ]; then
+        if printf '%s\n' "$uninstall_log" | grep -Fq "Context Actions removed"; then
+            echo "FAIL: $product uninstall log says Context Actions removed"; exit 1
+        fi
+    fi
     [ ! -e "$app_dir" ] || { echo "FAIL: app dir survives uninstall"; exit 1; }
     leftover="$(find "$menu_dir" -name 'dolphin-*' 2>/dev/null | wc -l)"
     [ "$leftover" -eq 0 ] || { echo "FAIL: $leftover menu files survive uninstall"; exit 1; }
