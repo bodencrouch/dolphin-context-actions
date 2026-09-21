@@ -14,14 +14,16 @@ fi
 
 SERVICEDIR="${HOME}/.local/share/kio/servicemenus"
 CONFIGDIR="${HOME}/.config/dolphin-context-actions"
-REGISTRY_SRC="assets/conversions.yaml"
-REGISTRY_DST="${CONFIGDIR}/conversions.yaml"
+REGISTRY_SRC="assets/conversions.json"
+REGISTRY_DST="${CONFIGDIR}/conversions.json"
 CONVERTERBIN="${HOME}/.local/bin/dolphin-context-actions"
+HELPERBUILDDIR="build/helper"
 
-install_rust_helper() {
-    echo "Installing Rust helper..."
-    cargo install --path . --root "$HOME/.local" --force --locked \
-        || cargo install --path . --root "$HOME/.local" --force
+install_helper() {
+    echo "Installing C++ helper..."
+    cmake -S . -B "$HELPERBUILDDIR" -DCMAKE_BUILD_TYPE=Release
+    cmake --build "$HELPERBUILDDIR" --parallel --target dolphin-context-actions
+    cmake --install "$HELPERBUILDDIR" --prefix "$HOME/.local"
 }
 
 install_service_menus() {
@@ -84,7 +86,7 @@ install_link_plugin() {
 echo "=== Dolphin Context Actions Installer ==="
 echo ""
 
-install_rust_helper
+install_helper
 echo ""
 
 install_service_menus

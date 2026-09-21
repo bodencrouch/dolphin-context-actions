@@ -208,7 +208,7 @@ private:
         return first.isDir() ? first.absoluteFilePath() : first.absolutePath();
     }
 
-    // Keep in sync with the Cargo.toml [[bin]] entry point.
+    // Keep in sync with helper/CMakeLists.txt (dolphin-context-actions).
     static QString helperName()
     {
         return QStringLiteral("dolphin-context-actions");

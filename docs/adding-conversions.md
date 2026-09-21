@@ -1,38 +1,45 @@
 # Adding conversions
 
-The conversion catalog lives in a YAML file. After you edit it, run
+The conversion catalog lives in a JSON file. After you edit it, run
 `make install-menus-only` to regenerate Dolphin's context menus.
 
-> Registries load from YAML or JSON. The Rust helper embeds the bundled
-> catalog and can load either format from disk; your own overrides can use
-> either format.
+The C++ helper embeds the bundled catalog (`:/conversions.json`) and can
+load a JSON override from disk.
 
 Your live copy is at:
 
 ```
-~/.config/dolphin-context-actions/conversions.yaml
+~/.config/dolphin-context-actions/conversions.json
 ```
 
 The repository ships a default at
-`assets/conversions.yaml`.
+`assets/conversions.json`.
 
 ## Registry format
 
-Each conversion is one entry under `conversions:`:
+Each conversion is one object under `conversions`:
 
-```yaml
-conversions:
-  - id: pdf-to-md              # unique ID, used on the command line
-    label: To Markdown         # text shown in the context menu
-    source_extensions: [.pdf]  # file extensions this applies to
-    source_mimetypes: [application/pdf]  # Dolphin mimetypes
-    target_extension: .md      # output extension (written beside the source file)
-    featured: true             # show directly in the Convert submenu
-    requires_commands: []      # at least one must exist on PATH (empty = no check)
-    requires_packages: [python3-PyMuPDF]  # alias: checks for pdftotext (poppler)
-    engine: pymupdf_text         # which backend function runs the conversion
-    icon: text-markdown          # freedesktop icon name for the menu entry
+```json
+{
+  "conversions": [
+    {
+      "id": "pdf-to-md",
+      "label": "To Markdown",
+      "source_extensions": [".pdf"],
+      "source_mimetypes": ["application/pdf"],
+      "target_extension": ".md",
+      "featured": true,
+      "requires_commands": [],
+      "requires_packages": ["python3-PyMuPDF"],
+      "engine": "pymupdf_text",
+      "icon": "text-markdown"
+    }
+  ]
+}
 ```
+
+`requires_packages: ["python3-PyMuPDF"]` is an alias that checks for
+`pdftotext` (poppler), not a Python package.
 
 ### Field notes
 
@@ -50,8 +57,8 @@ conversions:
 
 **`requires_packages`** — Extra checks at menu generation time. The
 `python3-PyMuPDF` / `pymupdf` / `PyMuPDF` aliases look for `pdftotext`.
-`PyYAML` and `tomli-w` always pass because YAML/TOML/JSON engines are built
-into the crate.
+`PyYAML` and `tomli-w` always pass because YAML/TOML/JSON engines run
+in-process.
 
 **`engine`** — See below. This is the only field that ties a registry entry to code.
 
@@ -61,7 +68,7 @@ into the crate.
 |--------|--------------|-------------|
 | `pymupdf_text` | Extracts plain text from PDF pages via `pdftotext` (poppler) | PDF → Markdown |
 | `libreoffice_headless` | Runs `libreoffice --headless --convert-to …` | Office docs → PDF |
-| `yaml_json` | Parses YAML or JSON and writes the other format (built-in) | YAML ↔ JSON |
+| `yaml_json` | Parses YAML or JSON and writes the other format | YAML ↔ JSON |
 | `pandoc` | Runs `pandoc source -o target` | Markdown ↔ HTML, MD → PDF |
 | `csv_json` | CSV/TSV ↔ JSON (built-in) | CSV → JSON, JSON → CSV, TSV → CSV |
 | `toml_json` | TOML ↔ JSON (built-in) | TOML ↔ JSON |
@@ -73,8 +80,8 @@ into the crate.
 
 **`imagemagick`** — HEIC support depends on your ImageMagick build (libheif delegate). If conversion fails, the error dialog shows ImageMagick's message.
 
-To add an engine, edit `src/file_converter.rs`. Add a function and register
-it in the `run_conversion` match.
+To add an engine, edit `helper/file_converter.cpp`. Add a function and register
+it in `runEngine`.
 
 ## Worked example: Markdown to PDF
 
@@ -83,16 +90,18 @@ it in the `run_conversion` match.
 1. Install pandoc and make sure `pandoc` is on your PATH.
 2. Add a registry entry (the `pandoc` engine already exists):
 
-```yaml
-  - id: md-to-pdf
-    label: To PDF
-    source_extensions: [.md]
-    source_mimetypes: [text/markdown]
-    target_extension: .pdf
-    featured: false
-    requires_commands: [pandoc]
-    engine: pandoc
-    icon: application-pdf
+```json
+{
+  "id": "md-to-pdf",
+  "label": "To PDF",
+  "source_extensions": [".md"],
+  "source_mimetypes": ["text/markdown"],
+  "target_extension": ".pdf",
+  "featured": false,
+  "requires_commands": ["pandoc"],
+  "engine": "pandoc",
+  "icon": "application-pdf"
+}
 ```
 
 3. Re-install:

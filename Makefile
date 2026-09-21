@@ -2,23 +2,26 @@ BINDIR ?= $(HOME)/.local/bin
 SERVICEDIR ?= $(HOME)/.local/share/kio/servicemenus
 CONFIGDIR ?= $(HOME)/.config/dolphin-context-actions
 CONVERTERBIN ?= $(BINDIR)/dolphin-context-actions
-REGISTRY ?= assets/conversions.yaml
+REGISTRY ?= assets/conversions.json
+HELPERBUILDDIR ?= build/helper
 PLUGINBUILDDIR ?= build/kio-plugin
 PLUGINPREFIX ?= /usr
 
-.PHONY: all install uninstall cargo-install install-menus install-menus-only plugin-build install-plugin doctor
+.PHONY: all install uninstall helper-install install-menus install-menus-only plugin-build install-plugin doctor
 
 all: install
 
 # Installing as root writes into root's ~/.local while the plugin step still
 # needs sudo on its own. Refuse rather than mix the two.
-cargo-install:
+helper-install:
 	@if [ "$$(id -u)" -eq 0 ]; then \
 		echo "Do not run 'make install' as root (or via sudo/pkexec)." >&2; \
 		echo "install-plugin below calls sudo itself for the one step that needs it." >&2; \
 		exit 1; \
 	fi
-	cargo install --path . --root $(HOME)/.local --force --locked || cargo install --path . --root $(HOME)/.local --force
+	cmake -S . -B $(HELPERBUILDDIR) -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(HELPERBUILDDIR) --parallel --target dolphin-context-actions
+	cmake --install $(HELPERBUILDDIR) --prefix $(HOME)/.local
 
 doctor:
 	python3 scripts/check-privileged-pth.py
@@ -31,8 +34,8 @@ install-menus:
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
-	@if [ ! -f "$(CONFIGDIR)/conversions.yaml" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.yaml; fi
-	$(CONVERTERBIN) --generate-menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.yaml
+	@if [ ! -f "$(CONFIGDIR)/conversions.json" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.json; fi
+	$(CONVERTERBIN) --generate-menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.json
 	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 
 plugin-build:
@@ -42,7 +45,7 @@ plugin-build:
 install-plugin: plugin-build
 	sudo cmake --install $(PLUGINBUILDDIR)
 
-install: cargo-install install-menus install-plugin
+install: helper-install install-menus install-plugin
 
 install-menus-only:
 	mkdir -p $(SERVICEDIR) $(CONFIGDIR)
@@ -52,8 +55,10 @@ install-menus-only:
 	chmod +x $(SERVICEDIR)/dolphin-audio-converter.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension.desktop
 	rm -f $(SERVICEDIR)/dolphin-link-extension-bg.desktop
-	@if [ ! -f "$(CONFIGDIR)/conversions.yaml" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.yaml; fi
-	cargo run --quiet -- --generate-menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.yaml
+	@if [ ! -f "$(CONFIGDIR)/conversions.json" ]; then cp $(REGISTRY) $(CONFIGDIR)/conversions.json; fi
+	cmake -S . -B $(HELPERBUILDDIR) -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(HELPERBUILDDIR) --parallel --target dolphin-context-actions
+	$(HELPERBUILDDIR)/helper/dolphin-context-actions --generate-menus --output-dir $(SERVICEDIR) --converter-bin $(CONVERTERBIN) --registry $(CONFIGDIR)/conversions.json
 	rm -f $(SERVICEDIR)/dolphin-file-converter-*.desktop
 
 uninstall:

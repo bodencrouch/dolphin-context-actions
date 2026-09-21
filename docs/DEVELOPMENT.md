@@ -5,8 +5,11 @@
 ```bash
 git clone https://github.com/bodencrouch/dolphin-context-actions.git
 cd dolphin-context-actions
-cargo test
-cargo install --path . --root ~/.local --force
+cmake -S . -B build/helper -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+cmake --build build/helper --parallel
+DOLPHIN_CONTEXT_ACTIONS_HEADLESS=1 QT_QPA_PLATFORM=offscreen \
+  ctest --test-dir build/helper --output-on-failure
+cmake --install build/helper --prefix ~/.local
 ```
 
 Never run the whole install as root/sudo/pkexec —
@@ -18,7 +21,7 @@ one step that needs it and refuse to run under `sudo`.
 Makefile targets for development:
 
 ```bash
-make install        # cargo install + service menus + KIO plugin/KAuth helper
+make install        # CMake helper + service menus + KIO plugin/KAuth helper
 make install-menus  # Install just the .desktop files
 make plugin-build   # Build the KIO plugin, KAuth helper, and probe
 make install-plugin # Install the KIO plugin + KAuth helper to system paths
@@ -48,41 +51,34 @@ doesn't get picked up by an existing process). `killall dolphin` after
 ## Store package and CI
 
 - `ghns/install.sh` — installer bundled in the archive that Dolphin's
-  *Download New Services…* dialog runs (user-scope, no root, no cargo).
+  *Download New Services…* dialog runs (user-scope, no root, no compiler).
 - `scripts/build-ghns-package.sh` — builds that archive; ships
-  `target/release/dolphin-context-actions` plus `assets/conversions.yaml`.
+  `build/helper/helper/dolphin-context-actions` plus `assets/conversions.json`.
 - `tests/test_ghns_package.sh` — installs the archive into a throwaway
   `$HOME` and checks the full install/run/uninstall cycle.
 - `scripts/publish-to-pling.sh` — pushes a release payload to the
   store.kde.org product (see `packaging/pling/PUBLISHING.md`).
 - `promo/generate.py` — renders the store preview images and demo GIF.
-- `.github/workflows/` — CI (`cargo test`, shellcheck, package test,
+- `.github/workflows/` — CI (`ctest` for the helper, shellcheck, package test,
   KF6 plugin build in a Fedora container) and release-please releases.
 
 ## Project layout
 
 ```
-src/
-├── main.rs                  # CLI binary
-├── lib.rs                   # crate root
-├── cli.rs                   # CLI parser + smart menu dispatch
-├── config.rs                # JSON config read/write
-├── ui.rs                    # kdialog/qdbus progress bar helpers
-├── link_ops.rs              # Link Shell Extension operations (hardlink/symlink/clone/copy)
-├── archive_ops.rs           # 7-Zip-style Archive menu (extract/compress/hash)
-├── file_converter.rs        # Document, data, and image conversion engines
-├── file_converter_menus.rs  # Generate conversion service menus
-├── uploaders.rs             # Imgur upload
-├── bin/
-│   └── generate_menus.rs    # Menu-generation helper
-└── converters/
-    ├── mod.rs               # unique_output() -- auto-rename on collision
-    ├── ffmpeg_tools.rs      # Resolves an ffmpeg binary against actual encoder support
-    ├── audio.rs             # Audio transcoding (7 formats)
-    └── video.rs             # GIF/MP4/WebM/MKV + audio extraction
+helper/
+├── main.cpp                 # CLI binary
+├── cli.cpp                  # CLI parser + smart menu dispatch
+├── config.cpp               # JSON config read/write
+├── ui.cpp                   # kdialog/qdbus progress bar helpers
+├── link_ops.cpp             # Link Shell Extension operations (hardlink/symlink/clone/copy)
+├── archive_ops.cpp          # 7-Zip-style Archive menu (extract/compress/hash)
+├── file_converter.cpp       # Document, data, and image conversion engines
+├── file_converter_menus.cpp # Generate conversion service menus
+├── uploaders.cpp            # Imgur upload
+└── converters.cpp           # unique_output(), ffmpeg, audio, video
 
 assets/
-└── conversions.yaml         # Bundled conversion catalog
+└── conversions.json         # Bundled conversion catalog
 
 kio-plugin/
 ├── dolphinlinkfileitemaction.cpp        # Link context-menu plugin
@@ -98,10 +94,9 @@ scripts/
 
 ## Adding a new audio format
 
-1. Add the preset to `preset()` and `AUDIO_FORMATS` in `src/converters/audio.rs`
+1. Add the preset to the audio table in `helper/converters.cpp`
 2. Add a `[Desktop Action convertToXxx]` block to `servicemenus/dolphin-audio-converter.desktop`
-3. Add the format to the smart menu choices in `src/cli.rs` (both `is_gif` and
-   `is_audio` sections)
+3. Add the format to the smart menu choices in `helper/cli.cpp`
 
 ## How the smart menu works
 
