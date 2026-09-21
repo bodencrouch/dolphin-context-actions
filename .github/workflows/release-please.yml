@@ -41,6 +41,11 @@ jobs:
           scripts/build-ghns-package.sh context-actions dist
           scripts/build-ghns-package.sh archive dist
           scripts/build-ghns-package.sh link dist
+      - name: Require three GHNS tarballs
+        run: |
+          ls dist/dolphin-context-actions-servicemenu-v*.tar.gz
+          ls dist/dolphin-archive-servicemenu-v*.tar.gz
+          ls dist/dolphin-link-servicemenu-v*.tar.gz
       - name: Upload assets to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -67,6 +72,11 @@ jobs:
           scripts/build-ghns-package.sh context-actions dist
           scripts/build-ghns-package.sh archive dist
           scripts/build-ghns-package.sh link dist
+      - name: Require three GHNS tarballs
+        run: |
+          ls dist/dolphin-context-actions-servicemenu-v*.tar.gz
+          ls dist/dolphin-archive-servicemenu-v*.tar.gz
+          ls dist/dolphin-link-servicemenu-v*.tar.gz
       - name: Push new payloads to the store products (OCS API)
         env:
           PLING_USERNAME: ${{ secrets.PLING_USERNAME }}

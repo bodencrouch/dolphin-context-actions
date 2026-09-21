@@ -96,6 +96,12 @@ chmod 0755 "$root/install.sh"
 cp "$repo/LICENSE" "$root/LICENSE"
 printf '%s\n' "$version" > "$root/VERSION"
 printf '%s\n' "$product_id" > "$root/product.id"
+# Convert notify copy stays "Context Actions"; archive/link use the store name.
+case "$product" in
+    context-actions) product_name="Context Actions" ;;
+    *) product_name="$store_name" ;;
+esac
+printf '%s\n' "$product_name" > "$root/product.name"
 
 readme_bin_line=""
 if [ "$product" = context-actions ]; then

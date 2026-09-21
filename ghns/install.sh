@@ -29,6 +29,28 @@ HERE="$(cd -- "$(dirname -- "$0")" && pwd)"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
 PRODUCT_ID="$(tr -d '\n' < "$HERE/product.id" 2>/dev/null || true)"
 [ -n "$PRODUCT_ID" ] || PRODUCT_ID="dolphin-context-actions"
+PRODUCT_NAME="$(tr -d '\n' < "$HERE/product.name" 2>/dev/null || true)"
+if [ -z "$PRODUCT_NAME" ]; then
+    case "$PRODUCT_ID" in
+        dolphin-archive) PRODUCT_NAME="Dolphin Archive" ;;
+        dolphin-link) PRODUCT_NAME="Dolphin Link" ;;
+        *) PRODUCT_NAME="Context Actions" ;;
+    esac
+fi
+case "$PRODUCT_ID" in
+    dolphin-archive)
+        INSTALL_HINT="Right-click a file in Dolphin to archive it."
+        INSTALL_LOG="Installed. Right-click a file in Dolphin to archive it."
+        ;;
+    dolphin-link)
+        INSTALL_HINT="Right-click a file in Dolphin to create a link."
+        INSTALL_LOG="Installed. Right-click a file in Dolphin to create a link."
+        ;;
+    *)
+        INSTALL_HINT="Right-click a file in Dolphin to convert it."
+        INSTALL_LOG="Installed. Right-click a media or document file in Dolphin."
+        ;;
+esac
 APP_DIR="$DATA_HOME/$PRODUCT_ID"
 MENU_DIR="$DATA_HOME/kio/servicemenus"
 BIN_DIR="$HOME/.local/bin"
@@ -54,7 +76,7 @@ refresh_menus() {
 notice() {
     # Fire and forget: notify-send can hang with no notification daemon.
     if command -v notify-send >/dev/null 2>&1; then
-        notify-send -i document-convert -a "Context Actions" "$1" "$2" \
+        notify-send -i document-convert -a "$PRODUCT_NAME" "$1" "$2" \
             >/dev/null 2>&1 &
     fi
 }
@@ -116,8 +138,8 @@ do_install() {
 
     mv "$MANIFEST".tmp "$MANIFEST"
     refresh_menus
-    notice "Context Actions installed" "Right-click a file in Dolphin to convert it."
-    log "Installed. Right-click a media or document file in Dolphin."
+    notice "$PRODUCT_NAME installed" "$INSTALL_HINT"
+    log "$INSTALL_LOG"
     return 0
 }
 
@@ -154,7 +176,7 @@ do_uninstall() {
     rm -rf -- "$APP_DIR"
     refresh_menus
     if [ "$quiet" != quiet ]; then
-        notice "Context Actions removed" "The context menu entries are gone."
+        notice "$PRODUCT_NAME removed" "The context menu entries are gone."
         log "Uninstalled."
     fi
     return 0
