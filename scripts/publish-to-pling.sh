@@ -2,15 +2,29 @@
 # Push a new payload file (and version string) to an existing store.kde.org
 # product over the OCS v1 API that api.kde-look.org still serves.
 #
-# The product must already exist -- creating one is a one-time manual step in
-# the web UI (see packaging/pling/PUBLISHING.md). After that, releases update
-# it from CI with three secrets:
+# Each product must already exist -- creating them is a one-time manual step
+# in the web UI (see packaging/pling/PUBLISHING.md). After that, releases
+# update them from CI. Call this script once per payload with that product's
+# content ID:
 #
 #   PLING_USERNAME    your OpenDesktop/store.kde.org login
 #   PLING_PASSWORD    its password (use an account dedicated to publishing)
 #   PLING_CONTENT_ID  the number in the product URL, e.g. store.kde.org/p/123456
 #
+# Per-product GitHub secrets (PLING_CONTENT_ID is a legacy alias for convert):
+#
+#   PLING_CONTENT_ID_CONTEXT_ACTIONS  Dolphin Context Actions
+#   PLING_CONTENT_ID_ARCHIVE          Dolphin Archive
+#   PLING_CONTENT_ID_LINK             Dolphin Link
+#
 # Usage: publish-to-pling.sh <payload.tar.gz>
+#
+#   PLING_CONTENT_ID=$PLING_CONTENT_ID_CONTEXT_ACTIONS \
+#     scripts/publish-to-pling.sh dist/dolphin-context-actions-servicemenu-v*.tar.gz
+#   PLING_CONTENT_ID=$PLING_CONTENT_ID_ARCHIVE \
+#     scripts/publish-to-pling.sh dist/dolphin-archive-servicemenu-v*.tar.gz
+#   PLING_CONTENT_ID=$PLING_CONTENT_ID_LINK \
+#     scripts/publish-to-pling.sh dist/dolphin-link-servicemenu-v*.tar.gz
 set -euo pipefail
 
 payload="${1:?payload file required}"
