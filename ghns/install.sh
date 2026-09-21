@@ -11,13 +11,15 @@
 #   install.sh --uninstall    (some versions try --deinstall)
 #
 # What install does:
-#   1. Copies the bundled Linux binary to  $XDG_DATA_HOME/dolphin-context-actions/
-#   2. Links it from ~/.local/bin (best effort)
+#   1. Copies the bundled Linux binary to  $XDG_DATA_HOME/<product.id>/
+#   2. Links it from ~/.local/bin (best effort) only when product.id is
+#      dolphin-context-actions — archive/link must not steal that name
 #   3. Installs the service menus to        $XDG_DATA_HOME/kio/servicemenus/
 #      with Exec= rewritten to the absolute launcher path, because Dolphin
 #      often runs without ~/.local/bin on PATH
-#   4. Generates the per-filetype "Convert" menus for the tools present on
-#      THIS machine (ffmpeg, libreoffice, pandoc, …) via the bundled binary
+#   4. Generates the per-filetype "Convert" menus only when conversions.json
+#      is in the payload (the convert package), for tools present on THIS
+#      machine (ffmpeg, libreoffice, pandoc, …) via the bundled binary
 #   5. Records every installed file so uninstall removes exactly that
 #
 # No python3, pip, compilers, or sudo.
@@ -25,7 +27,9 @@ set -u
 
 HERE="$(cd -- "$(dirname -- "$0")" && pwd)"
 DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
-APP_DIR="$DATA_HOME/dolphin-context-actions"
+PRODUCT_ID="$(tr -d '\n' < "$HERE/product.id" 2>/dev/null || true)"
+[ -n "$PRODUCT_ID" ] || PRODUCT_ID="dolphin-context-actions"
+APP_DIR="$DATA_HOME/$PRODUCT_ID"
 MENU_DIR="$DATA_HOME/kio/servicemenus"
 BIN_DIR="$HOME/.local/bin"
 LAUNCHER="$APP_DIR/dolphin-context-actions"
@@ -79,8 +83,10 @@ do_install() {
 
     # Best-effort ~/.local/bin link: nice for terminals, and the optional
     # Link Shell Extension KIO plugin looks the command up there. Never
-    # overwrite something that isn't ours (e.g. a cargo install).
-    if mkdir -p "$BIN_DIR" 2>/dev/null; then
+    # overwrite something that isn't ours (e.g. a from-source cmake install).
+    # Archive and Link packages share the helper binary name but must not
+    # steal ~/.local/bin/dolphin-context-actions from the convert package.
+    if [ "$PRODUCT_ID" = dolphin-context-actions ] && mkdir -p "$BIN_DIR" 2>/dev/null; then
         if [ ! -e "$BIN_DIR/dolphin-context-actions" ] || [ -L "$BIN_DIR/dolphin-context-actions" ]; then
             ln -sfn "$LAUNCHER" "$BIN_DIR/dolphin-context-actions" \
                 && printf '%s\n' "$BIN_DIR/dolphin-context-actions" >> "$MANIFEST".tmp
@@ -98,11 +104,14 @@ do_install() {
     done
 
     # 3. Per-filetype Convert menus, generated against the tools installed on
-    #    this machine. Not fatal: the static menus above already work.
-    if ! "$LAUNCHER" --generate-menus --output-dir "$MENU_DIR" --converter-bin "$LAUNCHER" \
-        >> "$MANIFEST".tmp 2>/dev/null; then
-        log "Note: no Convert menus generated (no supported conversion tools found yet)."
-        log "They appear automatically after: install.sh --install with the tools present."
+    #    this machine. Only the convert package ships conversions.json.
+    #    Not fatal: the static menus above already work.
+    if [ -f "$HERE/conversions.json" ]; then
+        if ! "$LAUNCHER" --generate-menus --output-dir "$MENU_DIR" --converter-bin "$LAUNCHER" \
+            >> "$MANIFEST".tmp 2>/dev/null; then
+            log "Note: no Convert menus generated (no supported conversion tools found yet)."
+            log "They appear automatically after: install.sh --install with the tools present."
+        fi
     fi
 
     mv "$MANIFEST".tmp "$MANIFEST"
