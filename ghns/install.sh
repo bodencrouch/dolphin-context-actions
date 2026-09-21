@@ -126,19 +126,30 @@ do_uninstall() {
     if [ -f "$MANIFEST" ]; then
         while IFS= read -r file; do
             case "$file" in
-                "$APP_DIR"/*|"$MENU_DIR/$GENERATED_PREFIX"*|"$MENU_DIR"/dolphin-*.desktop|"$BIN_DIR"/dolphin-context-actions)
+                "$APP_DIR"/*)
                     rm -f -- "$file" ;;
+                "$MENU_DIR"/*)
+                    case "$file" in
+                        "$MENU_DIR/$GENERATED_PREFIX"*)
+                            [ "$PRODUCT_ID" = dolphin-context-actions ] && rm -f -- "$file" ;;
+                        *)
+                            rm -f -- "$file" ;;
+                    esac ;;
+                "$BIN_DIR"/dolphin-context-actions)
+                    [ "$PRODUCT_ID" = dolphin-context-actions ] && rm -f -- "$file" ;;
             esac
         done < "$MANIFEST"
         rm -f -- "$MANIFEST"
     fi
-    # Belt and braces for older manifests: generated menus carry our prefix.
-    rm -f -- "$MENU_DIR/$GENERATED_PREFIX"-*.desktop 2>/dev/null
-    # Only remove the bin link if it points at us.
-    if [ -L "$BIN_DIR/dolphin-context-actions" ]; then
-        case "$(readlink "$BIN_DIR/dolphin-context-actions")" in
-            "$APP_DIR"/*) rm -f -- "$BIN_DIR/dolphin-context-actions" ;;
-        esac
+    if [ "$PRODUCT_ID" = dolphin-context-actions ]; then
+        # Belt and braces for older manifests: generated menus carry our prefix.
+        rm -f -- "$MENU_DIR/$GENERATED_PREFIX"-*.desktop 2>/dev/null
+        # Only remove the bin link if it points at us.
+        if [ -L "$BIN_DIR/dolphin-context-actions" ]; then
+            case "$(readlink "$BIN_DIR/dolphin-context-actions")" in
+                "$APP_DIR"/*) rm -f -- "$BIN_DIR/dolphin-context-actions" ;;
+            esac
+        fi
     fi
     rm -rf -- "$APP_DIR"
     refresh_menus
