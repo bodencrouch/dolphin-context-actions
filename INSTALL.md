@@ -4,7 +4,7 @@
 
 | Method | Command |
 |---|---|
-| From source | `make install` (needs rustc/cargo) |
+| From source | `make install` (needs CMake and Qt 6) |
 | GHNS | Download New Services (ships a prebuilt helper) |
 | Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
 | Fedora | `sudo dnf install dolphin-context-actions-0.1.0-1.noarch.rpm` |
@@ -14,7 +14,7 @@
 | Flatpak | `flatpak install --from https://flathub.org/…` |
 | AppImage | Download from Releases, `chmod +x`, run |
 
-pipx, uvx, and `pip install` are gone on this branch.
+The helper is a C++/Qt 6 binary, same language as Dolphin.
 
 After any method, restart Dolphin to load the menus:
 
@@ -28,7 +28,7 @@ killall dolphin
 
 Open **Settings → Configure Dolphin → Context Menu → Download New
 Services…**, search for **Dolphin Context Actions**, and install. That
-package ships a prebuilt helper. No rustc, no cargo.
+package ships a prebuilt helper. No compiler on the user's machine.
 
 ## From source (make)
 
@@ -38,7 +38,7 @@ cd dolphin-context-actions
 make install
 ```
 
-This runs `cargo install --path . --root ~/.local --force`, installs the
+This builds the Qt 6 helper with CMake, installs it to `~/.local/bin`, installs the
 media service menus, and builds `kio-plugin/` — the context-menu plugins
 (Pick Link Source / Drop Link As, and the Archive submenu) and the KAuth
 privileged-link helper — then installs both to system paths. Only the
@@ -129,7 +129,7 @@ Runtime dependencies:
 - **libnotify** (desktop notifications)
 - **KIO 6** (Dolphin context-menu integration)
 
-From-source builds also need **Rust 1.79+ (cargo)** (`std::path::absolute`).
+From-source builds also need **CMake and Qt 6**.
 GHNS ships a prebuilt helper, so that path does not.
 
 General conversions use optional tools. Install only the ones you need:
@@ -139,11 +139,11 @@ General conversions use optional tools. Install only the ones you need:
 - pandoc for Markdown and HTML
 - ImageMagick for image formats
 
-Building from source also requires rustc/cargo, CMake, Extra CMake Modules,
+Building from source also requires CMake, Extra CMake Modules,
 Qt 6 headers, and KIO 6 headers. On Fedora:
 
 ```bash
-sudo dnf install rust cargo cmake extra-cmake-modules qt6-qtbase-devel \
+sudo dnf install cmake extra-cmake-modules qt6-qtbase-devel \
   kf6-kcoreaddons-devel kf6-kio-devel
 ```
 
