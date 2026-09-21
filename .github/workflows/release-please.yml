@@ -32,15 +32,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build the GHNS package
-        run: scripts/build-ghns-package.sh dist
+      - name: Install Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake g++ qt6-base-dev
+      - name: Build the GHNS packages
+        run: |
+          scripts/build-ghns-package.sh context-actions dist
+          scripts/build-ghns-package.sh archive dist
+          scripts/build-ghns-package.sh link dist
       - name: Upload assets to the GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ needs.release-please.outputs.tag_name }}" \
-            dist/dolphin-context-actions-servicemenu-v*.tar.gz \
+            dist/dolphin-*-servicemenu-v*.tar.gz \
             --clobber --repo "${{ github.repository }}"
 
   publish-store:
@@ -52,18 +58,46 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Build the GHNS package
-        run: scripts/build-ghns-package.sh dist
-      - name: Push new payload to the store product (OCS API)
+      - name: Install Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake g++ qt6-base-dev
+      - name: Build the GHNS packages
+        run: |
+          scripts/build-ghns-package.sh context-actions dist
+          scripts/build-ghns-package.sh archive dist
+          scripts/build-ghns-package.sh link dist
+      - name: Push new payloads to the store products (OCS API)
         env:
           PLING_USERNAME: ${{ secrets.PLING_USERNAME }}
           PLING_PASSWORD: ${{ secrets.PLING_PASSWORD }}
           PLING_CONTENT_ID: ${{ secrets.PLING_CONTENT_ID }}
+          PLING_CONTENT_ID_CONTEXT_ACTIONS: ${{ secrets.PLING_CONTENT_ID_CONTEXT_ACTIONS }}
+          PLING_CONTENT_ID_ARCHIVE: ${{ secrets.PLING_CONTENT_ID_ARCHIVE }}
+          PLING_CONTENT_ID_LINK: ${{ secrets.PLING_CONTENT_ID_LINK }}
         run: |
-          if [ -z "$PLING_USERNAME" ] || [ -z "$PLING_PASSWORD" ] || [ -z "$PLING_CONTENT_ID" ]; then
-            echo "::notice::PLING_USERNAME / PLING_PASSWORD / PLING_CONTENT_ID secrets not set."
+          if [ -z "$PLING_USERNAME" ] || [ -z "$PLING_PASSWORD" ]; then
+            echo "::notice::PLING_USERNAME / PLING_PASSWORD secrets not set."
             echo "::notice::Skipping store.kde.org publish. See packaging/pling/PUBLISHING.md."
             exit 0
           fi
-          scripts/publish-to-pling.sh dist/dolphin-context-actions-servicemenu-v*.tar.gz
+          publish_one() {
+            local content_id="$1"
+            local secret_name="$2"
+            local glob="$3"
+            if [ -z "$content_id" ]; then
+              echo "::notice::$secret_name not set; skipping $glob. See packaging/pling/PUBLISHING.md."
+              return 0
+            fi
+            # shellcheck disable=SC2086
+            PLING_CONTENT_ID="$content_id" scripts/publish-to-pling.sh $glob
+          }
+          publish_one "${PLING_CONTENT_ID_CONTEXT_ACTIONS:-$PLING_CONTENT_ID}" \
+            "PLING_CONTENT_ID_CONTEXT_ACTIONS (or PLING_CONTENT_ID)" \
+            dist/dolphin-context-actions-servicemenu-v*.tar.gz
+          publish_one "$PLING_CONTENT_ID_ARCHIVE" \
+            "PLING_CONTENT_ID_ARCHIVE" \
+            dist/dolphin-archive-servicemenu-v*.tar.gz
+          publish_one "$PLING_CONTENT_ID_LINK" \
+            "PLING_CONTENT_ID_LINK" \
+            dist/dolphin-link-servicemenu-v*.tar.gz

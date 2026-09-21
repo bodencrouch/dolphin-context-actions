@@ -74,21 +74,21 @@ Like the link actions, this menu comes from `kio-plugin/` and needs a source ins
 
 ### From Dolphin itself (easiest)
 
-Dolphin can install this without a terminal:
+Dolphin can install these without a terminal:
 
 1. Open **Settings → Configure Dolphin → Context Menu**.
 2. Click **Download New Services…**.
-3. Search for **Dolphin Context Actions** and click **Install**.
+3. Search for **Dolphin Context Actions**, **Dolphin Archive**, or **Dolphin Link** and click **Install**.
 
 That downloads a small package from [store.kde.org](https://store.kde.org)
-and runs its installer as you — no root, no cargo. Everything lands under your
-home directory (`~/.local/share/dolphin-context-actions/` plus the service
-menus) and the same dialog uninstalls it again. The conversion menus are
-generated on your machine, so they list only what your installed tools
-(ffmpeg, LibreOffice, pandoc, …) can actually do.
+and runs its installer as you — no root, no compiler. Everything lands under
+your home directory plus the service menus, and the same dialog uninstalls it
+again. Conversion menus are generated on your machine, so they list only what
+your installed tools (ffmpeg, LibreOffice, pandoc, …) can actually do.
 
-The store package covers the conversion features. The Link Shell Extension
-and Archive plugins are compiled code and still need a source build (below).
+The three listings are separate products. Install the ones you want. Dynamic
+archive names and elevated link drops still need the KIO plugin from a source
+build (below).
 
 ### Every other method
 
@@ -96,7 +96,7 @@ See [INSTALL.md](INSTALL.md) for every available method:
 
 | Method | Command |
 |---|---|
-| From source | `make install` (needs rustc/cargo) |
+| From source | `make install` (needs CMake and Qt 6) |
 | GHNS | Download New Services (ships a prebuilt helper) |
 | Debian/Ubuntu | `sudo apt install ./dolphin-context-actions_0.1.0-1_all.deb` |
 | Fedora/openSUSE | `sudo rpm -i dolphin-context-actions-0.1.0-1.noarch.rpm` |
@@ -105,13 +105,11 @@ See [INSTALL.md](INSTALL.md) for every available method:
 | Flatpak | `flatpak install io.github.bodencrouch.dolphin-context-actions` |
 | AppImage | Download and run from releases |
 
-pipx, uvx, and `pip install` are gone on this branch. The helper is a
-Rust binary.
+The helper is a C++/Qt 6 binary, same language as Dolphin.
 
 Only the source install (`make install` / `install.sh`) currently builds
-`kio-plugin/`, so it's the only method that provides the Link Shell
-Extension features (**Pick Link Source** / **Drop Link As**) and the
-**Archive** submenu at all — see
+`kio-plugin/`, so it's the only method that provides dynamic Archive names
+and elevated Link drops — see
 [Limitations](#link-shell-extension-on-linux) below.
 
 After installation, restart Dolphin (`killall dolphin`) to load the service
@@ -152,11 +150,11 @@ the settings dialog where you can set:
   https://api.imgur.com/oauth2/addclient)
 
 Configuration is stored in `~/.config/dolphin-context-actions/config.json`.
-The editable conversion catalog is stored beside it as `conversions.yaml`.
+The editable conversion catalog is stored beside it as `conversions.json`.
 
 ## Requirements
 
-- **Rust 1.79+ (cargo)** (from-source builds; GHNS ships a prebuilt helper)
+- **CMake + Qt 6** (from-source builds; GHNS ships a prebuilt helper)
 - **ffmpeg** (≥ 4.4) with ffprobe (for media conversion only)
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
@@ -192,7 +190,7 @@ The Link Shell Extension features work on most modern Linux filesystems (ext4, b
   Link Shell Extension features (Pick Link Source / Drop Link As) and the
   Archive submenu aren't available from the packaged builds at all right now.
   `install.sh` / `make install`, run from a source checkout, is the only
-  path that builds the Rust helper, the plugins, and the KAuth helper today.
+  path that builds the C++ helper, the plugins, and the KAuth helper today.
 
 The drop menu supports hardlinks, symlinks, clones, smart copy, link properties, and local hardlink enumeration.
 
@@ -242,14 +240,14 @@ old `src/` directory to `sys.path`; done as root, that `.pth` file ends up
 root-owned while still pointing at a directory your normal user can write to,
 which means anything that can write there gets code run as root the next time
 anything does `sudo python3` / `pkexec ... python3`. Current installs use
-`cargo install` and do not write `.pth` files. `install.sh`/`make install`
+CMake and do not write `.pth` files. `install.sh`/`make install`
 still call `sudo` only for the plugin step, and refuse to run under `sudo`
 themselves.
 
 ## Project structure
 
 ```
-├── Cargo.toml                  # Rust crate
+├── CMakeLists.txt              # Qt 6 helper
 ├── Makefile                    # Build/install/uninstall
 ├── install.sh                  # Manual install script
 ├── kio-plugin/                 # Context-menu plugins + KAuth privileged-link helper
@@ -266,22 +264,18 @@ themselves.
 │   ├── dolphin-context-actions.desktop         # Smart menu (all media)
 │   └── dolphin-audio-converter.desktop         # Dedicated audio submenu
 ├── assets/
-│   └── conversions.yaml        # Bundled conversion catalog
-├── src/
-│   ├── main.rs                 # CLI binary
-│   ├── lib.rs                  # crate root
-│   ├── cli.rs                  # CLI entry point + smart dispatch
-│   ├── file_converter.rs       # Document, data, and image conversion engines
-│   ├── file_converter_menus.rs # Generate conversion service menus
-│   ├── ui.rs                   # kdialog progress bars / dialogs
-│   ├── config.rs               # Config management
-│   ├── link_ops.rs             # Link Shell Extension operations
-│   ├── archive_ops.rs          # 7-Zip-style Archive menu operations
-│   ├── converters/
-│   │   ├── audio.rs            # Audio transcoding (7 formats)
-│   │   └── video.rs            # GIF/MP4/WebM/MKV + audio extraction
-│   ├── uploaders.rs            # Imgur upload
-│   └── bin/generate_menus.rs   # Menu-generation helper
+│   └── conversions.json        # Bundled conversion catalog
+├── helper/
+│   ├── main.cpp                # CLI binary
+│   ├── cli.cpp                 # CLI entry point + smart dispatch
+│   ├── file_converter.cpp      # Document, data, and image conversion engines
+│   ├── file_converter_menus.cpp # Generate conversion service menus
+│   ├── ui.cpp                  # kdialog progress bars / dialogs
+│   ├── config.cpp              # Config management
+│   ├── link_ops.cpp            # Link Shell Extension operations
+│   ├── archive_ops.cpp         # 7-Zip-style Archive menu operations
+│   ├── converters.cpp          # Audio/video transcoding
+│   └── uploaders.cpp           # Imgur upload
 ├── docs/
 │   ├── CONFIGURATION.md        # Full config reference
 │   └── DEVELOPMENT.md          # Contributor guide
@@ -291,13 +285,14 @@ themselves.
 
 ## Building the store package
 
-`scripts/build-ghns-package.sh` builds the archive that store.kde.org
-serves to Dolphin's Download New Services dialog; `tests/test_ghns_package.sh`
-installs it into a throwaway `$HOME` and verifies the whole
-install/run/uninstall cycle. Releases are cut by release-please and the
-package is attached to each GitHub release automatically — see
+`scripts/build-ghns-package.sh <product>` builds the archive that
+store.kde.org serves to Dolphin's Download New Services dialog
+(`context-actions`, `archive`, or `link`). `tests/test_ghns_package.sh`
+installs each into a throwaway `$HOME` and verifies the whole
+install/run/uninstall cycle. Releases are cut by release-please and all
+three packages are attached to each GitHub release automatically — see
 [packaging/pling/PUBLISHING.md](packaging/pling/PUBLISHING.md) for how the
-store product is created and updated.
+store products are created and updated.
 
 If this saved you a trip to a sketchy online converter, a rating on the
 store page helps other people find it.

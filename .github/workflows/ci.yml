@@ -13,19 +13,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  rust-tests:
-    name: Rust tests
+  helper-tests:
+    name: C++ helper tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - name: Install runtime tools
-        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg p7zip-full
-      - name: Test
+      - name: Install Qt 6 and runtime tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake g++ qt6-base-dev ffmpeg p7zip-full
+      - name: Configure and test
         env:
           DOLPHIN_CONTEXT_ACTIONS_HEADLESS: "1"
           QT_QPA_PLATFORM: offscreen
-        run: cargo test
+        run: |
+          cmake -S . -B build/helper -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+          cmake --build build/helper --parallel
+          ctest --test-dir build/helper --output-on-failure
 
   shellcheck:
     name: ShellCheck
@@ -45,21 +50,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
       - name: Install build and runtime tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ffmpeg shellcheck
+          sudo apt-get install -y --no-install-recommends \
+            cmake g++ qt6-base-dev ffmpeg shellcheck
       - name: Build, install into a throwaway HOME, exercise, uninstall
         run: tests/test_ghns_package.sh
-      - name: Build the release-shaped package
-        run: scripts/build-ghns-package.sh dist
-      - name: Keep the built package as a build artifact
+      - name: Build the release-shaped packages
+        run: |
+          scripts/build-ghns-package.sh context-actions dist
+          scripts/build-ghns-package.sh archive dist
+          scripts/build-ghns-package.sh link dist
+      - name: Require three GHNS tarballs
+        run: |
+          ls dist/dolphin-context-actions-servicemenu-v*.tar.gz
+          ls dist/dolphin-archive-servicemenu-v*.tar.gz
+          ls dist/dolphin-link-servicemenu-v*.tar.gz
+      - name: Pling metadata
+        run: tests/test_pling_metadata.sh
+      - name: Keep the built packages as a build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ghns-package
-          path: dist/dolphin-context-actions-servicemenu-v*.tar.gz
-          if-no-files-found: ignore
+          path: dist/dolphin-*-servicemenu-v*.tar.gz
+          if-no-files-found: error
 
   kio-plugin:
     name: KIO plugin (KF6, Fedora)
