@@ -1,58 +1,109 @@
 #!/usr/bin/env bash
-# Builds the archive uploaded to store.kde.org for Dolphin's
+# Builds the archives uploaded to store.kde.org for Dolphin's
 # "Download New Services…" dialog.
 #
 # The archive layout follows what Dolphin's servicemenuinstaller expects:
 # an install.sh at the root (run with --install / --uninstall as the user),
 # next to the payload it installs. See ghns/install.sh for the contract.
 #
-# Usage: scripts/build-ghns-package.sh [output-dir]   (default: dist/)
+# Usage: scripts/build-ghns-package.sh <product> [output-dir]
+#   product is context-actions, archive, or link (default output-dir: dist/)
 set -euo pipefail
 
 repo="$(cd -- "$(dirname -- "$0")/.." && pwd)"
-out_dir="${1:-$repo/dist}"
 
-version="$(grep '^version' "$repo/Cargo.toml" | head -n1 | sed -n 's/^version = "\(.*\)"/\1/p')"
-[ -n "$version" ] || { echo "Could not read version from Cargo.toml" >&2; exit 1; }
+# Old CI passed an output directory as $1 (dist, ./dist, /tmp/out). Treat a
+# path containing / or . — and any other non-product token, so that
+# `scripts/build-ghns-package.sh dist` still works — as out_dir with product
+# context-actions.
+case "${1:-}" in
+    context-actions|archive|link) ;;
+    "")
+        ;;
+    *)
+        set -- context-actions "$1"
+        ;;
+esac
+product="${1:?product: context-actions, archive, or link}"
+out_dir="${2:-$repo/dist}"
 
-name="dolphin-context-actions-servicemenu-v${version}"
+case "$product" in
+    context-actions|archive|link) ;;
+    *)
+        echo "product: context-actions, archive, or link (got $product)" >&2
+        exit 1
+        ;;
+esac
+
+version="$(sed -n 's/.*project(dolphin-context-actions VERSION \([0-9.]*\).*/\1/p' "$repo/CMakeLists.txt" | head -n1)"
+[ -n "$version" ] || { echo "Could not read version from CMakeLists.txt" >&2; exit 1; }
+
+case "$product" in
+    context-actions)
+        product_id="dolphin-context-actions"
+        store_name="Dolphin Context Actions"
+        name="dolphin-context-actions-servicemenu-v${version}"
+        ;;
+    archive)
+        product_id="dolphin-archive"
+        store_name="Dolphin Archive"
+        name="dolphin-archive-servicemenu-v${version}"
+        ;;
+    link)
+        product_id="dolphin-link"
+        store_name="Dolphin Link"
+        name="dolphin-link-servicemenu-v${version}"
+        ;;
+esac
+
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 root="$stage/$name"
-mkdir -p "$root"
+mkdir -p "$root/servicemenus"
 
-# 1. Release binary. The store archive cannot compile Rust on the user's
+# 1. Release binary. The store archive cannot compile C++ on the user's
 #    machine, so the Linux helper ships prebuilt.
-(cd "$repo" && cargo build --release)
-cp "$repo/target/release/dolphin-context-actions" "$root/dolphin-context-actions"
+cmake -S "$repo" -B "$repo/build/helper" -DCMAKE_BUILD_TYPE=Release
+cmake --build "$repo/build/helper" --parallel --target dolphin-context-actions
+cp "$repo/build/helper/helper/dolphin-context-actions" "$root/dolphin-context-actions"
 chmod 0755 "$root/dolphin-context-actions"
 
-# 2. Registry: YAML always; JSON when PyYAML is available. The binary embeds
-#    the registry and can load either format from disk.
-cp "$repo/assets/conversions.yaml" "$root/conversions.yaml"
-if python3 -c "import json,sys,yaml" >/dev/null 2>&1; then
-    python3 - "$repo/assets/conversions.yaml" "$root/conversions.json" <<'PY'
-import json, sys
-import yaml
-src, dst = sys.argv[1], sys.argv[2]
-with open(src, encoding="utf-8") as f:
-    data = yaml.safe_load(f)
-with open(dst, "w", encoding="utf-8") as f:
-    json.dump(data, f, indent=1, sort_keys=True)
-    f.write("\n")
-PY
+# 2. Registry: JSON (the C++ helper embeds the same catalog via Qt resources).
+#    Convert menus are generated from this file at install time; archive/link
+#    omit it so they do not install Convert entries.
+if [ "$product" = context-actions ]; then
+    cp "$repo/assets/conversions.json" "$root/conversions.json"
 fi
 
-# 3. Service menus + installer + license.
-mkdir -p "$root/servicemenus"
-cp "$repo"/servicemenus/*.desktop "$root/servicemenus/"
+# 3. Service menus + installer + license + product.id.
+case "$product" in
+    context-actions)
+        cp "$repo/servicemenus/dolphin-context-actions.desktop" \
+           "$repo/servicemenus/dolphin-audio-converter.desktop" \
+           "$root/servicemenus/"
+        ;;
+    archive)
+        cp "$repo/servicemenus/dolphin-archive.desktop" "$root/servicemenus/"
+        ;;
+    link)
+        cp "$repo/servicemenus/dolphin-link-pick.desktop" \
+           "$repo/servicemenus/dolphin-link-drop.desktop" \
+           "$root/servicemenus/"
+        ;;
+esac
 cp "$repo/ghns/install.sh" "$root/install.sh"
 chmod 0755 "$root/install.sh"
 cp "$repo/LICENSE" "$root/LICENSE"
 printf '%s\n' "$version" > "$root/VERSION"
+printf '%s\n' "$product_id" > "$root/product.id"
 
+readme_bin_line=""
+if [ "$product" = context-actions ]; then
+    readme_bin_line="
+  ~/.local/bin/dolphin-context-actions      (command-line launcher)"
+fi
 cat > "$root/README" <<EOF
-Dolphin Context Actions v${version}
+${store_name} v${version}
 https://github.com/bodencrouch/dolphin-context-actions
 
 Installed automatically by Dolphin's "Download New Services..." dialog.
@@ -60,9 +111,8 @@ Manual install:   ./install.sh --install
 Manual uninstall: ./install.sh --uninstall
 
 Everything goes under your home directory only:
-  ~/.local/share/dolphin-context-actions/   (the program)
-  ~/.local/share/kio/servicemenus/          (the context menus)
-  ~/.local/bin/dolphin-context-actions      (command-line launcher)
+  ~/.local/share/${product_id}/   (the program)
+  ~/.local/share/kio/servicemenus/          (the context menus)${readme_bin_line}
 EOF
 
 # 4. Sanity checks before anything is shipped.
