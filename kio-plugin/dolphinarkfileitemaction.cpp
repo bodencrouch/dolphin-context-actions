@@ -1,7 +1,13 @@
+#include "archiveextractjob.h"
+
 #include <KAbstractFileItemActionPlugin>
 #include <KFileItemListProperties>
+#include <KIO/JobTracker>
+#include <KJobTrackerInterface>
+#include <KJobWidgets>
 #include <KPluginFactory>
 
+#include <QPointer>
 #include <QAction>
 #include <QDir>
 #include <QFileInfo>
@@ -209,11 +215,8 @@ public:
 
             addCommand(menu, tr("Extract files..."), QStringLiteral("archive-extract"),
                        QStringList{QStringLiteral("--archive"), QStringLiteral("extract")} + paths);
-            addCommand(menu, tr("Extract Here"), QStringLiteral("archive-extract"),
-                       QStringList{QStringLiteral("--archive"), QStringLiteral("extract-here")} + paths);
-            addCommand(menu, tr("Extract to %1").arg(quotedReduced(specFolder)),
-                       QStringLiteral("archive-extract"),
-                       QStringList{QStringLiteral("--archive"), QStringLiteral("extract-to")} + paths);
+            addExtract(menu, tr("Extract Here"), paths, false, parentWidget);
+            addExtract(menu, tr("Extract to %1").arg(quotedReduced(specFolder)), paths, true, parentWidget);
             addCommand(menu, tr("Test archive"), QStringLiteral("dialog-ok"),
                        QStringList{QStringLiteral("--archive"), QStringLiteral("test")} + paths);
         }
@@ -326,6 +329,23 @@ private:
             if (!QProcess::startDetached(executable, arguments)) {
                 fail(tr("Cannot start %1.").arg(executable));
             }
+        });
+    }
+
+    // Extract natively inside Dolphin: one KJob per click covering the whole
+    // selection, registered with the KIO job tracker so it sits in Dolphin's
+    // notification group like a copy job (N of M, bytes, speed, Pause, Cancel).
+    void addExtract(QMenu *menu, const QString &text, const QStringList &paths, bool toSubfolder,
+                    QWidget *parentWidget)
+    {
+        QAction *action = menu->addAction(QIcon::fromTheme(QStringLiteral("archive-extract")), text);
+        const QPointer<QWidget> window = parentWidget ? parentWidget->window() : nullptr;
+        connect(action, &QAction::triggered, this, [paths, toSubfolder, window]() {
+            auto *job = new ArchiveExtractJob(paths, toSubfolder);
+            if (window)
+                KJobWidgets::setWindow(job, window);
+            KIO::getJobTracker()->registerJob(job);
+            job->start();
         });
     }
 

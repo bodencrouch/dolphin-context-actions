@@ -66,7 +66,9 @@ A root-level **Archive** submenu matches 7-Zip's cascaded Windows Explorer menu:
 - Anything: **Add to archive...**, **Compress and email...**, **Add to "name.7z"**, **Add to "name.zip"**, and the matching email items
 - **CRC SHA** nested hashes (CRC-32 through BLAKE2sp, `*`, sidecar `.sha256`, checksum test)
 
-Extract Here / Extract to / Test / the one-click .7z/.zip items / CRC SHA run `7z`. Open, Extract files..., and Add to archive... open Ark's dialogs. Email uses `xdg-email --attach`.
+Extract Here / Extract to / Test / one-click zip items use `7z` when it is on PATH, otherwise `unzip`/`zip`, `tar`, `gzip`/`bzip2`/`xz`, `unrar`/`unar`, or `bsdtar`. `.7z` archives still need 7-Zip. CRC-32, MD5, and SHA hashes work without 7z; CRC-64, XXH64, and BLAKE2sp do not. Open / Extract files… / Add to archive… use Ark when present, otherwise `xdg-open` and the same zip/tar tools. Email uses `xdg-email --attach`.
+
+Extract Here and Extract to run inside Dolphin: each click becomes one job in Dolphin's notification group, like a copy. It shows "Extracting 2 of 4", byte progress and speed, with Pause and Cancel for that click only.
 
 Like the link actions, this menu comes from `kio-plugin/` and needs a source install (`make install` / `install.sh`).
 
@@ -159,7 +161,8 @@ The editable conversion catalog is stored beside it as `conversions.json`.
 - **kdialog** (part of KDE)
 - **libnotify** (for desktop notifications)
 - **KIO 6** (for the root context-menu plugins)
-- **7zip** and **Ark** (for the Archive submenu)
+- **7zip** (optional; zip/unzip/tar/unrar are used when it is missing)
+- **Ark** (optional; opens the Archive dialogs when installed)
 
 Some conversions need extra tools. The installer only adds menu actions whose
 dependencies are available. See [Adding conversions](docs/adding-conversions.md)
