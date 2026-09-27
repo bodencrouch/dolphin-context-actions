@@ -21,7 +21,7 @@ product is `context-actions`, `archive`, or `link`.
 ## One-time setup (manual, ~15 minutes)
 
 1. Create an account at <https://www.opendesktop.org> (same login works on
-   store.kde.org). Username: `brunner56`. Display name: **Boden Crouch**.
+   store.kde.org). Username: `th3w1zard1`. Display name: **Boden Crouch**.
 2. On <https://store.kde.org>, click **Add Product** three times, once per
    row in the table above. Category is **Dolphin Service Menus** every time.
 3. Fill in each product:
@@ -50,7 +50,7 @@ Add these repository secrets on GitHub
 
 | Secret | Value |
 |---|---|
-| `PLING_USERNAME` | OpenDesktop login (`brunner56`) |
+| `PLING_USERNAME` | OpenDesktop login (`th3w1zard1`) |
 | `PLING_PASSWORD` | its password |
 | `PLING_CONTENT_ID_CONTEXT_ACTIONS` | convert product number from `/p/<ID>` |
 | `PLING_CONTENT_ID_ARCHIVE` | archive product number |
@@ -74,3 +74,12 @@ first line of the description, star rating, download count. That first
 line is the whole pitch; keep it under ~60 characters and benefit-first.
 Ratings come from users on the store page, so the GitHub README links to
 the store and asks happy users to rate it there.
+
+
+## Published content IDs (th3w1zard1)
+
+| Product | URL |
+|---|---|
+| Dolphin Context Actions | https://store.kde.org/p/2372345 |
+| Dolphin Archive | https://store.kde.org/p/2372346 |
+| Dolphin Link | https://store.kde.org/p/2372347 |

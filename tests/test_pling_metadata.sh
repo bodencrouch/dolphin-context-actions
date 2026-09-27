@@ -15,7 +15,7 @@ for slug, (name, summary) in expect.items():
     first = desc.splitlines()[0]
     assert meta["product"]["name"] == name, meta["product"]["name"]
     assert meta["product"]["summary"] == summary
-    assert meta["product"]["author"]["username"] == "brunner56"
+    assert meta["product"]["author"]["username"] == "th3w1zard1"
     assert meta["product"]["author"]["name"] == "Boden Crouch"
     assert meta["product"]["category_id"] == 102
     assert meta["product"]["license"] == "MIT"
