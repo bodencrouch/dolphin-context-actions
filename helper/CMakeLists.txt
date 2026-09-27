@@ -1,11 +1,13 @@
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network Test)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network DBus Test)
 
 qt_add_executable(dolphin-context-actions
     main.cpp
     cli.cpp
     ui.cpp
+    plasma_job.cpp
     config.cpp
     archive_ops.cpp
+    extract_plan.cpp
     link_ops.cpp
     file_converter.cpp
     file_converter_menus.cpp
@@ -20,7 +22,7 @@ qt_add_resources(dolphin-context-actions "registry"
 )
 
 target_include_directories(dolphin-context-actions PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(dolphin-context-actions PRIVATE Qt6::Core Qt6::Network)
+target_link_libraries(dolphin-context-actions PRIVATE Qt6::Core Qt6::Network Qt6::DBus)
 target_compile_definitions(dolphin-context-actions PRIVATE
     QT_NO_KEYWORDS
     APP_VERSION="${PROJECT_VERSION}"
@@ -33,6 +35,9 @@ if(BUILD_TESTING)
     qt_add_executable(helper_unit_tests
         tests/test_helper.cpp
         archive_ops.cpp
+        extract_plan.cpp
+    extract_plan.cpp
+        plasma_job.cpp
         file_converter.cpp
         file_converter_menus.cpp
         ui.cpp
@@ -44,7 +49,7 @@ if(BUILD_TESTING)
         FILES ${CMAKE_SOURCE_DIR}/assets/conversions.json
     )
     target_include_directories(helper_unit_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(helper_unit_tests PRIVATE Qt6::Core Qt6::Test)
+    target_link_libraries(helper_unit_tests PRIVATE Qt6::Core Qt6::DBus Qt6::Test)
     add_test(NAME helper_unit_tests COMMAND helper_unit_tests)
     add_test(
         NAME helper_cli
