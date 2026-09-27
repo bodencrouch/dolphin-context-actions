@@ -2,7 +2,11 @@
   "product": {
     "name": "Dolphin Link",
     "summary": "Hardlink or symlink from the right-click menu.",
-    "author": { "username": "brunner56", "name": "Boden Crouch" },
+    "author": {
+      "username": "th3w1zard1",
+      "name": "Boden Crouch",
+      "homepage": "https://github.com/bodencrouch"
+    },
     "category_id": 102,
     "category_name": "Dolphin Service Menus",
     "license": "MIT",

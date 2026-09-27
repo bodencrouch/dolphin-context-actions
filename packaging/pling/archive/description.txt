@@ -4,7 +4,9 @@ Extract Here, extract to a folder, add files to 7z or zip, or hash a payload —
 
 Cheap check: right-click a .zip → Archive → Extract Here. The files land next to the archive.
 
-Needs 7z or Ark on PATH. Dynamic names like Add to "photos.7z" are in the optional KIO plugin from a source build; this listing is the service-menu install.
+Uses 7z when installed; otherwise zip/unzip, tar, and unrar. Multi-select keeps one Plasma job per archive, grouped so you can cancel the batch or pause a single file. Dynamic names like Add to "photos.7z" are in the optional KIO plugin from a source build; this listing is the service-menu install.
 
-Author: Boden Crouch (brunner56)
+I ship convert, archive, and link as three listings so you install only the menu you use. The helper is C++/Qt under MIT, same family as Dolphin.
+
+Author: Boden Crouch (th3w1zard1)
 Source: https://github.com/bodencrouch/dolphin-context-actions

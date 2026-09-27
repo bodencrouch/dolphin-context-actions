@@ -22,7 +22,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake g++ qt6-base-dev ffmpeg p7zip-full
+            cmake g++ qt6-base-dev ffmpeg zip unzip p7zip-full
       - name: Configure and test
         env:
           DOLPHIN_CONTEXT_ACTIONS_HEADLESS: "1"

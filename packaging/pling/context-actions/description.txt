@@ -2,6 +2,8 @@ Convert a file from the right-click menu.
 
 Select a file in Dolphin, pick a format, and a converted copy appears next to it. The original is left alone.
 
+Cheap check: right-click a .png → Convert → JPEG. The new file sits next to the old one.
+
 WHAT YOU GET
 
 • Video to MP4, WebM, MKV, or GIF
@@ -18,5 +20,7 @@ INSTALL
 
 Settings → Configure Dolphin → Context Menu → Download New Services. Everything stays in your home directory.
 
-Author: Boden Crouch (brunner56)
+I ship convert, archive, and link as three listings so you install only the menu you use. The helper is C++/Qt under MIT, same family as Dolphin. If a converter is not on PATH, that item is simply not there.
+
+Author: Boden Crouch (th3w1zard1)
 Source: https://github.com/bodencrouch/dolphin-context-actions

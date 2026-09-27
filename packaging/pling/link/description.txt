@@ -6,5 +6,7 @@ Cheap check: Pick Link Source on a file, Drop Symlink on a folder.
 
 Directory hardlinks are not a Unix thing — use a symlink. Elevated drops into root-owned directories need the optional KIO plugin from a source build.
 
-Author: Boden Crouch (brunner56)
+I ship convert, archive, and link as three listings so you install only the menu you use. The helper is C++/Qt under MIT, same family as Dolphin.
+
+Author: Boden Crouch (th3w1zard1)
 Source: https://github.com/bodencrouch/dolphin-context-actions
