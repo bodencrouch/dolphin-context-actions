@@ -1,4 +1,4 @@
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Network DBus Test)
+find_package(Qt6 6.4 REQUIRED COMPONENTS Core Network DBus Test)
 
 qt_add_executable(dolphin-context-actions
     main.cpp
