@@ -13,7 +13,7 @@ include(KDECompilerSettings NO_POLICY_SCOPE)
 include(CTest)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Widgets)
-find_package(KF6 6.0 REQUIRED COMPONENTS CoreAddons KIO Auth)
+find_package(KF6 6.0 REQUIRED COMPONENTS CoreAddons KIO JobWidgets Auth)
 
 kcoreaddons_add_plugin(
     dolphinlinkfileitemaction
@@ -31,15 +31,21 @@ target_link_libraries(
 
 kcoreaddons_add_plugin(
     dolphinarkfileitemaction
-    SOURCES dolphinarkfileitemaction.cpp
+    SOURCES
+        dolphinarkfileitemaction.cpp
+        archiveextractjob.cpp
+        ../helper/extract_plan.cpp
     INSTALL_NAMESPACE "kf6/kfileitemaction"
 )
+target_include_directories(dolphinarkfileitemaction PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../helper)
 target_link_libraries(
     dolphinarkfileitemaction
     PRIVATE
         Qt6::Widgets
         KF6::CoreAddons
+        KF6::KIOCore
         KF6::KIOWidgets
+        KF6::JobWidgets
 )
 
 # Root-owned helper that creates a single symlink/hardlink outside the user's
