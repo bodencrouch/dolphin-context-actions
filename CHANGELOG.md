@@ -25,6 +25,39 @@
 - **Fixed:** five negated `grep` assertions in the plugin menu test were
   inert under `set -e` and could never fail.
 
+## [0.2.0](https://github.com/bodencrouch/dolphin-context-actions/compare/v0.1.0...v0.2.0) (2026-09-28)
+
+
+### Features
+
+* add a 7-Zip-style Archive submenu and keep tests off the desktop ([992c94b](https://github.com/bodencrouch/dolphin-context-actions/commit/992c94bf696a5e6a26b8313fc4a55deda9259da8))
+* add a Rust crate that replaces the Python helper CLI ([d94faa9](https://github.com/bodencrouch/dolphin-context-actions/commit/d94faa93a9a7591403c731a4da84f8eaff572cdf))
+* add a Rust crate that replaces the Python helper CLI ([69a2afd](https://github.com/bodencrouch/dolphin-context-actions/commit/69a2afd27ddf0a97f85e5cffd18801ce7fbee870))
+* **helper:** extract without 7z and report CLI jobs to Plasma ([dcb67a3](https://github.com/bodencrouch/dolphin-context-actions/commit/dcb67a3c49dea705997dda21382c1de0e011a413))
+* **plugin:** run Extract Here / Extract to as native Dolphin jobs ([5fcf04a](https://github.com/bodencrouch/dolphin-context-actions/commit/5fcf04a67b4789c1bb2b567f2c356657d840e5cb))
+* rename dropped links on collision instead of failing ([8d80ad6](https://github.com/bodencrouch/dolphin-context-actions/commit/8d80ad629be03d38f821d2d1cedc76d072558aa6))
+* ship as a Dolphin "Download New Services" package with full CI/CD ([03068e0](https://github.com/bodencrouch/dolphin-context-actions/commit/03068e0feb8a851df474ccd3752cb99dd7913d80))
+* unify Dolphin file conversion actions ([#1](https://github.com/bodencrouch/dolphin-context-actions/issues/1)) ([b919c85](https://github.com/bodencrouch/dolphin-context-actions/commit/b919c8597637960c269e80e35d897a16dafae234))
+
+
+### Bug Fixes
+
+* close rust-port review leftovers ([9089a5f](https://github.com/bodencrouch/dolphin-context-actions/commit/9089a5f05cb6e51520633c99e349d776caef2a56))
+* close rust-port review leftovers ([a214f1a](https://github.com/bodencrouch/dolphin-context-actions/commit/a214f1af37c0aa57ab55ed8c424ed86719954dc8))
+* don't crash or hang when notify-send/kdialog are missing ([57801c4](https://github.com/bodencrouch/dolphin-context-actions/commit/57801c455653b0ad147cc4d1af91121de819e76b))
+* harden media converters against real ffmpeg/encoder failures ([2a1b2bc](https://github.com/bodencrouch/dolphin-context-actions/commit/2a1b2bcc381ed9d227c2ad39bc37132e8b2f02fa))
+* scope GHNS uninstall convert menus to context-actions product ([68e846f](https://github.com/bodencrouch/dolphin-context-actions/commit/68e846f5b9a6b15c8ce70bb5bbab2ebd07586586))
+* serialize tests that mutate process-global env ([7ce3c52](https://github.com/bodencrouch/dolphin-context-actions/commit/7ce3c52fb8827d5902e84fbba5fa1101fa7a89b0))
+* serialize tests that mutate process-global env ([61b1f55](https://github.com/bodencrouch/dolphin-context-actions/commit/61b1f55b5d2ac7c142856f355c01cde197ef3296))
+* support Python 3.10 by making tomllib a soft dependency ([b4c5cf7](https://github.com/bodencrouch/dolphin-context-actions/commit/b4c5cf7c20c320be775a9df50b8afb074fd09910))
+
+
+### Documentation
+
+* drop the Python package and describe the Rust helper ([b159a6b](https://github.com/bodencrouch/dolphin-context-actions/commit/b159a6b3d11e14916cb6727b5f38460ee157b614))
+* drop the Python package and describe the Rust helper ([53ee0de](https://github.com/bodencrouch/dolphin-context-actions/commit/53ee0deacef64b31e211c03c631590d58a9342dc))
+* list fallback extractors in store listings and install zip in CI ([925b51b](https://github.com/bodencrouch/dolphin-context-actions/commit/925b51bcff32aff0a815bd0489dc5eae328800e7))
+
 ## 0.1.0 (2026-08-22)
 
 - **Dropping onto a name that is already taken now renames instead of
